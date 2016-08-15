@@ -1,0 +1,267 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="plt\login_center\src\bussiness\account_logic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\game_command.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\game_svr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\process_getdata.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\process_init.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\process_update.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\bussiness\static_file_mgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\conf.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\global_serv.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\hu_work.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\json_result.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\procedure_base.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\process_base.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\query_net_io.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\search_net_io.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\session_mgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\statistic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plt\login_center\src\frame\task_process.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\aws_request.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\aws_response.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\aws_struct.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\aws_table_common.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\field_property.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_comm\util_base64.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_tbl\aws_table_product.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\aws_tbl\aws_table_user.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\conf_base.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\delay_task_mgr.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\des.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\http_utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\rc4.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\threadlock.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="common\comm\time_utils.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="plt\login_center\src\bussiness\account_logic.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\game_command.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\game_svr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\process_getdata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\process_init.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\process_update.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\bussiness\static_file_mgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\base_def.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\conf.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\global_serv.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\hu_work.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\json_result.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\procedure_base.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\process_base.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\query_net_io.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\search_net_io.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\session.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\session_mgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\statistic.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plt\login_center\src\frame\task_process.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\time_utils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_consume_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_req_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_request.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_response.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_rsp_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_struct.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\aws_table_common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\bin_struct_define.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\field_property.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_comm\util_base64.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_tbl\aws_table_include.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_tbl\aws_table_product.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\aws_tbl\aws_table_user.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\cgi_socket.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\conf_base.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\delay_task.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\delay_task_mgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\des.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\guard_mutex.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\guard_mutex_rw.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\http_utils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\key_value.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\my_define.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\my_include.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\queue_t.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\rc4.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="common\comm\threadlock.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

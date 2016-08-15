@@ -1,0 +1,6 @@
+[SERV_INFO]
+module_group=0
+module_name=report_center
+module_ip=172.31.4.196
+module_svr=0,1,2
+module_priority=0
