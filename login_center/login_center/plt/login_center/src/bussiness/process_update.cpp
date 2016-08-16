@@ -21,15 +21,16 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
     TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]Param: Rid = %s Device = %s Rpid = %s Uid = %ld Sid = %d",
         strRid.c_str(), strDevice.c_str(), strRPid.c_str(), pstSession->m_stReqParam.m_ddwUserId, pstSession->m_stReqParam.m_dwSvrId));
 
-    if (EN_COMMAND_STEP__INIT == pstSession->m_udwCommandStep)
+    if (pstSession->m_udwCommandStep == EN_COMMAND_STEP__INIT)
     {
-        if (-1 != pstSession->m_stReqParam.m_dwSvrID &&
-            CGameSvrInfo::GetInstance()->m_udwSvrNum - 1)
+        if (-1 != pstSession->m_stReqParam.m_dwSvrId
+            && pstSession->m_stReqParam.m_dwSvrId > CGameSvrInfo::GetInstance()->m_udwSvrNum - 1)
         {
             pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
+        // next procedure
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__1;
     }
 
@@ -43,7 +44,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
         TbProduct tbProduct;
         TbUser tbUser;
         tbProduct.Set_App_uid(NumToString(pstSession->m_stReqParam.m_ddwUserId));
-        tbProduct.Set_R_pid(strRid);
+        tbProduct.Set_R_pid(strRPid);
         CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_PRIMARY);
         if ("" != strRid)
         {
@@ -61,22 +62,22 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
         return 0;
     }
 
-    // handle account info
     if (EN_COMMAND_STEP__2 == pstSession->m_udwCommandStep)
     {
-
         if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
         {
             pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
-
-
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
-        AwsRspInfo *pstAwsRspInfo = NULL;
+    }
 
-        for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
+    //handle account info
+    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
+    {
+        AwsRspInfo *pstAwsRspInfo = NULL;
+        for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); udIdx++)
         {
             pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
             string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
@@ -98,30 +99,29 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
                 {
                     pstUserInfo->m_dwUserNum = dwRetCode;
                 }
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: tbl=%s rspp=%s [seq=%u]",
                     pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
-
                 continue;
             }
-        }     
-            
-        // 获取玩家帐号信息
+        }
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+
         SLoginInfo stLoginInfo;
         stLoginInfo.Reset();
         stLoginInfo.m_strRid = strRid;
         stLoginInfo.m_strDevice = strDevice;
-
         //update player status
         CAccountLogic::GetUpdatePlayerStatus(&pstSession->m_stUserInfo, stLoginInfo);
-        TSE_LOG_DEBUG(pstSession->m_poServLog, ("PLAYER_STATUS:  %d", pstUserInfo->m_stUserStatus.m_ddwStatus));
-    }
-
-   
-
-    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
+        TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]: GetUpdatePlayerStatus [status=%ld] [sid = %d] [uid = %ld]",
+            pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, \
+            pstSession->m_stReqParam.m_dwSvrId, \
+            pstSession->m_stReqParam.m_ddwUserId));
+    }    
+           
+    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
     {
-        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
-        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);
+        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
+        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
         return 0;
     }

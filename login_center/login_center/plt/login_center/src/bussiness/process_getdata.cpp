@@ -1,4 +1,3 @@
-
 #include "process_getdata.h"
 #include "static_file_mgr.h"
 #include "procedure_base.h"
@@ -30,7 +29,6 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
         {
             strSid = pstSession->m_stReqParam.m_szKey[1];
         }
-   
     }
 
     string strDevice = pstSession->m_stReqParam.m_szDevice;
@@ -41,7 +39,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
     string strRid = pstSession->m_stReqParam.m_szRid;
 
     TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]Param: Rid = %s Email = %s Device = %s Rpid = %s Uid = %ld Sid = %d",
-        strRid.c_str(), strEmail.c_str(), strDevice.c_str(), strRPid.c_str(), pstSession->m_stReqParam.m_ddwUserId, strSid));
+        strRid.c_str(), strEmail.c_str(), strDevice.c_str(), strRPid.c_str(), pstSession->m_stReqParam.m_ddwUserId, pstSession->m_stReqParam.m_dwSvrId));
 
     if (pstSession->m_udwCommandStep == EN_COMMAND_STEP__INIT)
     {
@@ -57,7 +55,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
         if (EN_STATIC_TYPE_NEW_MAINTAIN != strStaticType)
         {
             // next procedure
-            pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
         }       
         else
         {
@@ -69,16 +67,12 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
     //get account info
     if (EN_COMMAND_STEP__2 == pstSession->m_udwCommandStep)
     {
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
         bNeedResponse = TRUE;
 
-
-
         pstSession->ResetAwsInfo();
         // 本机数据登录
-        if ("" == strRid
-            && "" == strEmail)
+        if ("" == strRid && "" == strEmail)
         {
             pstSession->m_stUserInfo.m_dwLoginTpye = EN_LOGIN_TPYE_VISTOR;
         }
@@ -88,22 +82,20 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             pstSession->m_stUserInfo.m_dwLoginTpye = EN_LOGIN_TPYE_ACCOUNT;
         }
 
-
-
+        TbProduct tbProduct;
+        TbUser tbUser;
         if (EN_LOGIN_TPYE_VISTOR == pstSession->m_stUserInfo.m_dwLoginTpye)
         {
-            TbProduct tbProduct;
-
+            TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: VISITOR   Device:[%s]", strDevice.c_str()));
             tbProduct.Set_Device(pstSession->m_stReqParam.m_szDevice);
             CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_DEVICE, CompareDesc(), false);
 
         }
         else if (EN_LOGIN_TPYE_ACCOUNT == pstSession->m_stUserInfo.m_dwLoginTpye)
         {
-            TbProduct tbProduct;
+            TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: ACCOUNT   Rid:[%s], Email:[%s]", strRid.c_str(), strEmail.c_str()));
             tbProduct.Set_Rid(strRid);
             CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_RID, CompareDesc(), false);
-            TbUser tbUser;
             tbUser.Set_Email(strEmail);
             CAwsRequest::Query(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_GLB_EMAIL, CompareDesc(), false);
         }
@@ -119,10 +111,10 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
             return -1;
         }
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         return 0;
     }
 
-    // 解析获取玩家的sid信息
     if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
     {
         if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
@@ -131,9 +123,12 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
-
-
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+    }
+
+    //handle account info
+    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+    {
         AwsRspInfo *pstAwsRspInfo = NULL;
         TINT32 dwRetcode = 0;
 
@@ -148,6 +143,8 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
                 {
                     pstUserInfo->m_dwProductNum = dwRetcode;
                 }
+                TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: tbl=%s rspp=%s [seq=%u]",
+                    pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 continue;
             }
             if (strTableRawName == EN_AWS_TABLE_USER)
@@ -157,6 +154,8 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
                 {
                     pstUserInfo->m_dwUserNum = dwRetcode;
                 }
+                TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: tbl=%s rspp=%s [seq=%u]",
+                    pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 continue;
             }
         }
@@ -172,7 +171,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
         TbProduct *ptbProduct = NULL;
 
         CAccountLogic::GetInitPlayerStatus(&pstSession->m_stUserInfo, stLoginInfo, ptbProduct);
-        TSE_LOG_DEBUG(pstSession->m_poServLog, ("CProcessInit::requestHandler: CAccountLogic::GetInitPlayerStatus [uid=%ld] [status=%ld] [seq=%u]", \
+        TSE_LOG_DEBUG(pstSession->m_poServLog, ("CAccountLogic::GetInitPlayerStatus [uid=%ld] [status=%ld] [seq=%u]", \
             pstSession->m_stUserInfo.m_stUserStatus.m_ddwUid, \
             pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, \
             pstSession->m_udwSeqNo));
@@ -183,7 +182,6 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
         }
         else
         {
-            // 帐号存在问题的
             if (0 == pstSession->m_stUserInfo.m_stUserStatus.m_ddwUid)
             {
                 pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
@@ -196,16 +194,18 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
                 pstSession->m_stReqParam.m_ddwUserId = pstSession->m_stUserInfo.m_stUserStatus.m_ddwUid;
             }
         }
+        TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]  [uid=%ld] [sid=%ld]", \
+            pstSession->m_stReqParam.m_ddwUserId, \
+            pstSession->m_stReqParam.m_dwSvrId));
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
     }
 
-    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+    if (EN_COMMAND_STEP__5 == pstSession->m_udwCommandStep)
     {
-        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(strStaticType);
+        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(strStaticType);
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
         return 0;
     }
 
     return 0;
 }
-
-

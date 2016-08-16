@@ -75,7 +75,6 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
     if (EN_COMMAND_STEP__2 == pstSession->m_udwCommandStep)
     {
         //get sid
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
         bNeedResponse = TRUE;
         pstSession->ResetAwsInfo();
@@ -134,20 +133,24 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
             TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
             return -1;
         }
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         return 0;
     }
 
-    // handle account info
     if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
     {
-       if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
-      {
-          pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
-          pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
-          return 0;
-      }
+        if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+    }
 
-      pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
+    // handle account info
+    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+    {
       AwsRspInfo *pstAwsRspInfo = NULL;
       TINT32 dwRetcode = 0;
 
@@ -197,9 +200,66 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
               continue;
           }
       }
+
+
+
+      //new game
+      if (1L == dwNewGameFlag)
+      {
+          pstSession->m_stReqParam.m_dwSvrId = 0;
+          pstSession->m_stReqParam.m_ddwUserId = 0;
+          vector<TbProduct *> vecTbProduct;
+          pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
+          bNeedResponse = TRUE;
+
+          for (TINT32 dwIdx = 0; dwIdx < pstUserInfo->m_dwProductNum; dwIdx++)
+          {
+              if (strRPid == pstUserInfo->m_tbProduct[dwIdx].Get_R_pid()
+                  && 0 == pstUserInfo->m_tbProduct[dwIdx].Get_Status()
+                  && "0" != pstUserInfo->m_tbProduct[dwIdx].Get_Device())
+              {
+                  TSE_LOG_INFO(pstSession->m_poServLog, ("[kurotest] NEW GAME device:[%s]", pstUserInfo->m_tbProduct[dwIdx].Get_Device().c_str()));
+                  vecTbProduct.push_back(&pstUserInfo->m_tbProduct[dwIdx]);
+              }
+          }
+          
+          if (0 != vecTbProduct.size())
+          {
+              pstSession->ResetAwsReq();
+              for (TUINT32 dwIdx = 0; dwIdx < vecTbProduct.size(); dwIdx++)
+              {
+                  vecTbProduct[dwIdx]->Set_Device("0");
+                  dwRetcode = CAwsRequest::UpdateItem(pstSession->m_vecAwsReq, vecTbProduct[dwIdx]);
+                  if (dwRetcode != 0)
+                  {
+                      TSE_LOG_DEBUG(pstSession->m_poServLog, ("CProcessInit::requestHandler: not clear device [seq=%u]",
+                          pstSession->m_udwSeqNo));
+                  }
+              }
+
+              dwRetcode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
+              if (dwRetCode < 0)
+              {
+                  pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
+                  TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
+                  return -3;
+              }
+              pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
+              return 0;
+          }
+          else
+          {
+              pstSession->m_udwCommandStep = EN_COMMAND_STEP__6;
+          }
+      }
+      else
+      {
+          pstSession->m_udwCommandStep = EN_COMMAND_STEP__6;
+      }
+
     }
 
-    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+    if (EN_COMMAND_STEP__5 == pstSession->m_udwCommandStep)
     {
         if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
         {
@@ -207,15 +267,148 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
-
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__6;
 
     }
 
-    //server maintain
+    if (EN_COMMAND_STEP__6 == pstSession->m_udwCommandStep)
+    {
+        SLoginInfo stLoginInfo;
+        stLoginInfo.Reset();
+        stLoginInfo.m_strRid = strRid;
+        stLoginInfo.m_strEmail = strEmail;
+        stLoginInfo.m_strPasswd = strPasswd;
+        stLoginInfo.m_strThId = strThId;
+        stLoginInfo.m_strDevice = strDevice;
+        stLoginInfo.m_strRPid = strRPid;
+
+        TbProduct *ptbProduct = NULL;
+        CAccountLogic::GetInitPlayerStatus(&pstSession->m_stUserInfo, stLoginInfo, ptbProduct);
+        TSE_LOG_INFO(pstSession->m_poServLog, ("CProcessInit::requestHandler: GetInitPlayerStatus [status=%ld] [seq=%u] [product_num=%d] [user_num=%d]",
+            pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, \
+            pstSession->m_udwSeqNo, \
+            pstSession->m_stUserInfo.m_dwProductNum, \
+            pstSession->m_stUserInfo.m_dwUserNum));
+        if (EN_PLAYER_STATUS_ERROR == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        //没有没机数据，导用户
+        else if (EN_PLAYER_STATUS_IMPORT == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stReqParam.m_dwSvrId = CGameSvrInfo::GetInstance()->GetNewPlayerSvr();
+            pstSession->m_stReqParam.m_ddwUserId = 0;
+        }
+        else if (EN_PLAYER_STATUS_PASSWORD_CHANGE == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        else if (EN_PLAYER_STATUS_BLACK_ACCOUNT == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 40008;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        else if (EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        else if (EN_PLAYER_STATUS_ACCOUNT_NOT_GAME_DATA == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        if (EN_PLAYER_STATUS_MULTI_EMAIL == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        else if (EN_PLAYER_STATUS_EMAIL_HAS_MULTI_GAME_DATA == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        else if (EN_PLAYER_STATUS_PRODUCTION_INFO_INVAILD == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        //UNREGISTER, UNACTIVE, ACTIVE
+        else
+        {
+            pstSession->m_stReqParam.m_dwSvrId = pstSession->m_stUserInfo.m_stUserStatus.m_ddwSid;
+            pstSession->m_stReqParam.m_ddwUserId = pstSession->m_stUserInfo.m_stUserStatus.m_ddwUid;
+            TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]: GetInitPlayerStatus [status=%ld] [sid = %d] [uid = %ld]",
+                pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, \
+                pstSession->m_stReqParam.m_dwSvrId, \
+                pstSession->m_stReqParam.m_ddwUserId));
+
+            if ("" != stLoginInfo.m_strProductInfo && NULL != ptbProduct)
+            {
+                pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
+                bNeedResponse = TRUE;
+                pstSession->ResetAwsReq();
+
+                ptbProduct->Set_App_uid(NumToString(pstSession->m_stReqParam.m_ddwUserId));
+                ptbProduct->Set_R_pid(strRPid);
+                ptbProduct->Set_Product_info(stLoginInfo.m_strProductInfo);
+
+                dwRetCode = CAwsRequest::UpdateItem(pstSession->m_vecAwsReq, ptbProduct);
+                if (dwRetCode == 0)
+                {
+                    dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
+                    if (dwRetCode < 0)
+                    {
+                        pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
+                        TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
+                        return -3;
+                    }
+                    pstSession->m_udwCommandStep = EN_COMMAND_STEP__7;
+                    return 0;
+                }
+            }
+            if (reqSid != pstSession->m_stReqParam.m_dwSvrId)
+            {
+                pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
+            }
+            else
+            {
+                pstSession->m_udwCommandStep = EN_COMMAND_STEP__9;
+            }
+        }
+    }
+
     if (EN_COMMAND_STEP__7 == pstSession->m_udwCommandStep)
     {
-        TBOOL bHasMaintain = FALSE;
+        if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        if (reqSid != pstSession->m_stReqParam.m_dwSvrId)
+        {
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
+        }
+        else
+        {
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__9;
+        }
+    }
+
+    //server maintain
+    if (EN_COMMAND_STEP__8 == pstSession->m_udwCommandStep)
+    {
         SStaticFileInfo stStaticFileInfo;
         stStaticFileInfo.Reset();
         SRouteInfo stRouteInfo;
@@ -229,7 +422,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         dwMaintainStatus = CStaticDataMaintain::GetMaintainStatus(stRouteInfo, stStaticFileInfo.m_jDataJson[0]["data"]);
         if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus)
         {
-            pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__9;
         }
         else
         {
@@ -240,7 +433,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
     }
 
     //数据打包
-    if (EN_COMMAND_STEP__8 == pstSession->m_udwCommandStep)
+    if (EN_COMMAND_STEP__9 == pstSession->m_udwCommandStep)
     {
         /*
         //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_GAME);
