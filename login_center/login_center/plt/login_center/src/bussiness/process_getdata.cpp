@@ -64,22 +64,24 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
         }
     }
 
-    //get account info
+    //get account info from db
     if (EN_COMMAND_STEP__2 == pstSession->m_udwCommandStep)
     {
         pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
         bNeedResponse = TRUE;
 
         pstSession->ResetAwsInfo();
-        // 本机数据登录
         if ("" == strRid && "" == strEmail)
         {
             pstSession->m_stUserInfo.m_dwLoginTpye = EN_LOGIN_TPYE_VISTOR;
         }
-        // 带帐号信息登录
-        else
+        else if ("" != strRid && "" != strEmail)
         {
             pstSession->m_stUserInfo.m_dwLoginTpye = EN_LOGIN_TPYE_ACCOUNT;
+        }
+        else
+        {
+            assert(0);
         }
 
         TbProduct tbProduct;
@@ -160,7 +162,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             }
         }
 
-        // 获取玩家帐号信息
+        //get account info
         SLoginInfo stLoginInfo;
         stLoginInfo.Reset();
         stLoginInfo.m_strRid = strRid;
@@ -202,7 +204,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
 
     if (EN_COMMAND_STEP__5 == pstSession->m_udwCommandStep)
     {
-        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(strStaticType);
+        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(strStaticType);
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
         return 0;
     }

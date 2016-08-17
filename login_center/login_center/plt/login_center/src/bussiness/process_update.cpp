@@ -34,7 +34,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__1;
     }
 
-    //get account info
+    //get account info from db
     if (EN_COMMAND_STEP__1 == pstSession->m_udwCommandStep)
     {
         pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
@@ -106,6 +106,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
         }
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
 
+        //get account info
         SLoginInfo stLoginInfo;
         stLoginInfo.Reset();
         stLoginInfo.m_strRid = strRid;
@@ -120,8 +121,8 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
            
     if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
     {
-        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
-        //pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);
+        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
+        pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
         return 0;
     }
