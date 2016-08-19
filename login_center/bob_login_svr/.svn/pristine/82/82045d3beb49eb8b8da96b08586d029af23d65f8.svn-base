@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="gbk"?>
+<Document table_name="product" read_capacity_units="400" write_capacity_units="80"
+          table_type="0" cache_mode="0" route_fld="1" route_thrd="100000">
+    <!-- table_type: 表示表的分割方式
+         取值: 0表示global表,只有一张
+               1表示按照指定depend_fld(必须是TINT64)字段的值除以split_size的余数进行分割,创建时要指定值
+               2表示按照指定depend_fld(必须是TINT64,表示微妙时间戳)字段按照月份分割,创建时要指定idx
+         depend_fld: 当table_type为1或者2时 表示指定的分割依据字段
+         split_size: 表示指定字段分割的表的条目数限制, 当table_type为1时生效 -->
+    <!-- 此表为全局唯一表
+        如gt项目 则表名为
+        gt_global_march_action-->
+	<FieldList>
+		<!-- 对源数据各个字段(field)的说明。type="N"表示数值，numtype表示类型，
+			目前只支持TUINT64。type="S" 表示文本，maxlen="256"表示最大长度。
+			type="B" 表示二进制，maxlen表示二进制数据的最大长度
+			目前只有N、S和B三种类型
+			index表示字段的索引类型，index=1-hash，2-range,3-local；-->
+		<!-- id(high32(suid)+low32(useq))-->
+        <Field no="0" type="S" maxlen="256" title="app_uid" index="1" />
+        <Field no="1" type="S" maxlen="256" title="r_pid" index="2" />
+        <Field no="2" type="N" numtype="TUINT64" title="sid" />
+        <Field no="3" type="S" maxlen="256" title="device" />
+        <Field no="4" type="S" maxlen="256" title="rid" />
+        <Field no="5" type="S" maxlen="256" title="product_info" />
+        <Field no="6" type="N" numtype="TUINT64" title="btime" />
+		<Field no="7" type="N" numtype="TUINT64" title="lgtime" />
+        <Field no="8" type="N" numtype="TUINT64" title="status" />
+        <Field no="9"  type="N" numtype="TUINT64" title="seq" />
+	</FieldList>
+    <GlobalIndex>
+		<!-- hash_fld:表示全局二级索引的hash字段编号；
+        range_fld:表示全局二级索引的range字段编号, -1表示没有range字段
+		projection_type：有三种取值0=“KEYS_ONLY”、1=“INCLUDE”、2=“ALL”；
+		projection_fld：当projection_type=1时，为字段编码的list，以逗号分隔
+        read: 初始此全局二级索引的读阈值
+        write: 初始此全局二级索引的写阈值-->
+        <Index no="0" idx_name="glb_r_pid" hash_fld="1" range_fld="-1" projection_type="2" read="30" write="30"/>
+        <Index no="1" idx_name="glb_device" hash_fld="3" range_fld="-1" projection_type="2" read="30" write="30"/>
+        <Index no="2" idx_name="glb_rid" hash_fld="4" range_fld="-1" projection_type="2" read="30" write="30"/>
+	</GlobalIndex>
+	<LocalIndex>
+		<!-- idx_fld:表示本地二级索引的字段编号；
+		projection_type：有三种取值0=“KEYS_ONLY”、1=“INCLUDE”、2=“ALL”；
+		projection_fld：当projection_type=1时，为字段编码的list，以逗号分隔-->
+	</LocalIndex>
+	<OpenType>
+		<Index no="0" idx_name="PRIMARY" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_PRIMARY"  />
+		<Index no="1" idx_name="glb_r_pid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_R_PID" />
+        <Index no="1" idx_name="glb_device" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_DEVICE" />
+        <Index no="1" idx_name="glb_rid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_RID" />
+        
+	</OpenType>
+</Document>
