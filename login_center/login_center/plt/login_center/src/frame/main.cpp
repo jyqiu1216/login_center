@@ -98,28 +98,21 @@ int main(int argc,char** argv)
             }
         }
 
-
-
-        CStaticFileMgr::GetInstance()->CheckStaticDataCompute();
-
-
-        
         // 更新相关的数值文件(外层脚本更新静态文件的时候,要检测当前的flag是否已经消失了才能进行静态文件的更新)
         if (access(DATA_LIST_FLAG, F_OK) == 0)
         {
             TSE_LOG_INFO(CGlobalServ::m_poServLog, ("beg to update static file"));
-            if (0 == CStaticFileMgr::GetInstance()->CheckStaticFileUpdate())
+            if (0 == CStaticFileMgr::GetInstance()->CheckUpdate())
             {
                 TSE_LOG_INFO(CGlobalServ::m_poServLog, ("Read update static file succeed."));
-                remove(DATA_LIST_FLAG);
             }
             else
             {
                 TSE_LOG_ERROR(CGlobalServ::m_poServLog, ("Read update static file failed!!"));
             }
-        }
 
-       
+            remove(DATA_LIST_FLAG);
+        }
 
 		sleep(1);
 	}

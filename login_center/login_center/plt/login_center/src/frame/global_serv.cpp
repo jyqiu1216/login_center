@@ -96,26 +96,6 @@ int CGlobalServ::Init()
     InitAwsTable(CConfBase::GetString("project").c_str());
 
 
-    // 初始化静态数据的md5_list管理器
-    CStaticDataMd5ListMgr *poStaticDataMd5 = CStaticDataMd5ListMgr::GetInstance();
-    if (0 != poStaticDataMd5->InitStaticData(m_poServLog))
-    {
-        TSE_LOG_ERROR(m_poServLog, ("GlobalServ init static file md5 list mgr failed!"));
-        return -17;
-    }
-    TSE_LOG_INFO(m_poServLog, ("GlobalServ init static file md5 list mgr success!"));
-
-
-    // 初始化account_status管理器
-    CStaticDataAccountStatusMgr *poStaticDataAccountStatusMgr = CStaticDataAccountStatusMgr::GetInstance();
-    if (0 != poStaticDataAccountStatusMgr->InitStaticData(m_poServLog))
-    {
-        TSE_LOG_ERROR(m_poServLog, ("GlobalServ init account_status mgr failed!"));
-        return -17;
-    }
-    TSE_LOG_INFO(m_poServLog, ("GlobalServ init account_status mgr success!"));
-
-
     // 初始化静态文件管理器
     CStaticFileMgr *poStaticFileMgr = CStaticFileMgr::GetInstance();
     if (0 != poStaticFileMgr->Init(m_poServLog))
@@ -123,13 +103,7 @@ int CGlobalServ::Init()
         TSE_LOG_ERROR(m_poServLog, ("GlobalServ init static file mgr failed!"));
         return -17;
     }
-    CStaticFileMgr::GetInstance()->CheckStaticFileUpdate();
     TSE_LOG_INFO(m_poServLog, ("GlobalServ init static file mgr success!"));
-
-
-    // 建立md5_list(只能在静态文件管理器初始化之后才能调用)
-    CStaticDataMd5ListMgr::GetInstance()->GenStaticDataMd5List();
-   
     m_poZkConf = new CZkRegConf;
     if (0 != m_poZkConf->Init("../conf/serv_info.conf", "../conf/module.conf"))
     {

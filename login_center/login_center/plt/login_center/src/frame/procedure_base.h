@@ -10,8 +10,11 @@ public:
     static string GetTableRawName(const string& strTableName);
 	static TINT32 SendAwsRequest(SSession *pstSession, TUINT16 uwReqServiceType);
 
+public:
+    static TINT32 SendLoginGetRequest(SSession *pstSession);
 
-
+private:
+    static string GetReqUrl_LoginGet(SSession *pstSession);
 };
 
 #endif

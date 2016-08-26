@@ -9,7 +9,6 @@
 
 TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse)
 {
-    //handle request param
     TINT32 dwRetCode = 0;
     string strRPid = kstrRPid;
     SUserInfo *pstUserInfo = &pstSession->m_stUserInfo;
@@ -18,15 +17,12 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
     string strRid = pstSession->m_stReqParam.m_szRid;
     string strDevice = pstSession->m_stReqParam.m_szDevice;
 
-    TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]Param: Rid = %s Device = %s Rpid = %s Uid = %ld Sid = %d",
-        strRid.c_str(), strDevice.c_str(), strRPid.c_str(), pstSession->m_stReqParam.m_ddwUserId, pstSession->m_stReqParam.m_dwSvrId));
-
     if (pstSession->m_udwCommandStep == EN_COMMAND_STEP__INIT)
     {
         if (-1 != pstSession->m_stReqParam.m_dwSvrId
             && pstSession->m_stReqParam.m_dwSvrId > CGameSvrInfo::GetInstance()->m_udwSvrNum - 1)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE_ERROR_SID;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
@@ -34,50 +30,56 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__1;
     }
 
-    //get account info from db
+
+    // 请求获取玩家的sid信息
     if (EN_COMMAND_STEP__1 == pstSession->m_udwCommandStep)
     {
+        // 登录请求，所以需要从帐号系统中获取玩家的sid信息,修正请求的sid,保证玩家登录到正确的server
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__2;
         pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
         bNeedResponse = TRUE;
+
         pstSession->ResetAwsInfo();
 
+        
         TbProduct tbProduct;
-        TbUser tbUser;
         tbProduct.Set_App_uid(NumToString(pstSession->m_stReqParam.m_ddwUserId));
         tbProduct.Set_R_pid(strRPid);
         CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_PRIMARY);
+
         if ("" != strRid)
         {
+            TbUser tbUser;
             tbUser.Set_Rid(strRid);
             CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_PRIMARY);
         }
+
         dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
-        if (0 > dwRetCode)
+        if (dwRetCode < 0)
         {
             pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
             TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
             return -1;
         }
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__2;
         return 0;
     }
 
+    // 解析获取玩家的sid信息
     if (EN_COMMAND_STEP__2 == pstSession->m_udwCommandStep)
     {
+
         if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            //pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
-    }
 
-    //handle account info
-    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
-    {
+
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         AwsRspInfo *pstAwsRspInfo = NULL;
-        for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); udIdx++)
+
+        for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
         {
             pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
             string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
@@ -88,8 +90,6 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
                 {
                     pstUserInfo->m_dwProductNum = dwRetCode;
                 }
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: tbl=%s rspp=%s [seq=%u]",
-                    pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 continue;
             }
             if (strTableRawName == EN_AWS_TABLE_USER)
@@ -99,27 +99,24 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
                 {
                     pstUserInfo->m_dwUserNum = dwRetCode;
                 }
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: tbl=%s rspp=%s [seq=%u]",
-                    pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 continue;
             }
-        }
-        pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
-
-        //get account info
+        }     
+            
+        // 获取玩家帐号信息
         SLoginInfo stLoginInfo;
         stLoginInfo.Reset();
         stLoginInfo.m_strRid = strRid;
         stLoginInfo.m_strDevice = strDevice;
-        //update player status
+
+
         CAccountLogic::GetUpdatePlayerStatus(&pstSession->m_stUserInfo, stLoginInfo);
-        TSE_LOG_DEBUG(pstSession->m_poServLog, ("[kurotest]: GetUpdatePlayerStatus [status=%ld] [sid = %d] [uid = %ld]",
-            pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, \
-            pstSession->m_stReqParam.m_dwSvrId, \
-            pstSession->m_stReqParam.m_ddwUserId));
-    }    
-           
-    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+       
+    }
+
+   
+
+    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
     {
         pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
         pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);

@@ -243,6 +243,9 @@ struct SSession
     SDownNode            *m_pstAwsProxyNode;
     TBOOL               m_bAwsProxyNodeExist;
 
+    SDownNode           *m_pstHuNode;
+    TBOOL               m_bHuNodeExist;
+
 
 
     /********************************************************************************************
@@ -251,9 +254,13 @@ struct SSession
     TUCHAR              m_szClientReqBuf[MAX_HTTP_REQ_LEN];                 // client请求Buf
     TUINT32             m_udwClientReqBufLen;                               // client请求Buf长度
     TINT32              m_dwClientReqMode;
+    TUINT32             m_udwReqTime;
 
     TCHAR               m_szRspBuf[MAX_NETIO_PACKAGE_BUF_LEN];
     TINT32              m_dwRspLen;
+    TINT32              m_dwHuRetCode;
+    TINT32              m_dwHuCostTime;
+    TUINT8              m_ucHuCompressFlag;
 
     /********************************************************************************************
                         内部保留信息
@@ -275,7 +282,8 @@ struct SSession
     RequestParam        *m_pstHttpParam;
     TUCHAR              *m_pszReqBuf;
     TUINT32             m_udwReqBufLen;
-    TCHAR*              m_pTmpBuf;
+    TUCHAR*             m_pTmpBuf;
+    TINT32              m_dwTmpLen;
 
     /********************************************************************************************
                         时间参数
@@ -336,11 +344,17 @@ struct SSession
 
         m_bAwsProxyNodeExist = FALSE;
         m_pstAwsProxyNode = NULL;
+        m_pstHuNode = NULL;
+        m_bHuNodeExist = FALSE;
 
         m_szClientReqBuf[0] = 0;
         m_udwClientReqBufLen = 0;
+        m_udwReqTime = 0;
 
         m_dwRspLen = 0;
+        m_ucHuCompressFlag = 0;
+        m_dwHuRetCode = 0;
+        m_dwHuCostTime = 0;
 
         m_stReqParam.Reset();
         m_stCommonResInfo.Reset();
@@ -362,6 +376,7 @@ struct SSession
         m_pszReqBuf = NULL;
         m_udwReqBufLen = 0;
         m_pTmpBuf = NULL;
+        m_dwTmpLen = 0;
 
 
         //aws info

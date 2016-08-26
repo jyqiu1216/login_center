@@ -81,6 +81,8 @@ public:
     // hs请求包和包长
     TUCHAR m_szReqBuf[MAX_HTTP_REQ_LEN];
 
+    TUCHAR              m_szTmpBuf[MAX_NETIO_PACKAGE_BUF_LEN];
+
 private:
     CJsonResult m_oJsonResult;
 

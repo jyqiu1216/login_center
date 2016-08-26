@@ -3,11 +3,12 @@
 
 
 #include "my_include.h"
-#include "guard_mutex_rw.h"
+#include "base/os/wtselock.h"
 #include <map>
 #include <vector>
 
 using namespace std;
+using namespace wtse::os;
 
 #define DATA_LIST_JSON ("../data/data_list.json")
 #define DATA_LIST_FLAG ("../data/data_list_flag")
@@ -16,15 +17,25 @@ using namespace std;
 enum EMaintainStatus
 {
     EN_MAINTAIN_TYPE_NORMAL = 0,
-    EN_MAINTAIN_TYPE_VERSION_FORCE_UPDATE = 1,
-    EN_MAINTAIN_TYPE_GLOBAL_MAINTAIN = 2,
-    EN_MAINTAIN_TYPE_SVR_MAINTAIN = 3,
+    EN_MAINTAIN_TYPE_TO_MAINTAIN = 1,   
+    EN_MAINTAIN_TYPE_MAINTAINING = 2,
+    EN_MAINTAIN_TYPE_VERSION_FORCE_UPDATE = 3,
+    EN_MAINTAIN_TYPE_VERSION_ADVICE_UPDATE = 4,
 };
 
+enum EPlatForm
+{
+    EN_PLATFORM__COMMON = 0,
+    EN_PLATFORM__IOS,
+    EN_PLATFORM__ANDROID,
+};
 
-
-
-
+enum EnJsonDiff
+{
+    EN_JSON_DIFF__EQUAL = 0,
+    EN_JSON_DIFF__NEW, 
+    EN_JSON_DIFF__ADD,
+};
 
 // 静态文件类型
 const string EN_STATIC_TYPE_GAME = "game";
@@ -44,6 +55,8 @@ const string EN_STATIC_TYPE_GLOBALCONF = "global_conf";
 const string EN_STATIC_TYPE_MD5 = "md5";
 const string EN_STATIC_TYPE_ACCOUNT_STATUS = "account_status";
 const string EN_STATIC_TYPE_USER_LINK = "user_link";
+const string EN_STATIC_TYPE_FUNCTION_SWITCH = "function_switch";
+const string EN_STATIC_TYPE_META_RAW = "metaraw";
 
 
 
@@ -88,11 +101,7 @@ struct SRouteInfo
     string m_strPlatform;
     string m_strVs;
     string m_strSid;
-    string m_strLang;
-    string m_strStaticFilePath;
-    TUINT32 m_udwReload;
-    string m_strExInfo;
-    TUINT32 m_udwFileTs;
+    TUINT32 m_udwCurTime;
 
     SRouteInfo()
     {
@@ -104,631 +113,66 @@ struct SRouteInfo
         m_strPlatform = "";
         m_strVs = "";
         m_strSid = "";
-        m_strLang = "";
-        m_strStaticFilePath = "";
-        m_udwReload = 0;
-        m_strExInfo = "";
-        m_udwFileTs = 0;
+        m_udwCurTime = 0;
     }
 };
 
-// 保存静态数据的最小信息
-struct SStaticFileInfo
+struct SStaticFileProperty
 {
-    TUINT64 m_uddwEnMD5;
-    string m_strEnStaticFile;
+    TBOOL m_bDiffPlatForm;
+    TBOOL m_bDiffVersion;
+    TBOOL m_bNeedLoadData;
+    TBOOL m_bNeedMd5;
+};
 
-    TUINT64 m_uddwDeMD5;
-    string m_strDeStaticFile;
-
+class CStaticFileContent
+{
+public:
+    string m_strFileName;
+    TUINT8 m_ucReloadFlag;
     string m_strMd5;
+    string m_strMd5Raw;
 
-    TUINT32 m_udwReload;
-
-    Json::Value m_jDataJson;
-    Json::Value m_jDataInfoJson;
-
-
-    SStaticFileInfo()
-    {
-        Reset();
-    }
-
-    TVOID Reset()
-    {
-        m_uddwEnMD5 = 0;
-        m_strEnStaticFile = "";
-
-        m_uddwDeMD5 = 0;
-        m_strDeStaticFile = "";
-
-        m_strMd5 = "";
-
-        m_udwReload = 0;
-
-        m_jDataJson.clear();
-        m_jDataInfoJson.clear();
-    }
-};
-
-
-enum EStaticDataOperateType
-{
-    EN_UPDATE_TYPE_INIT,
-    EN_UPDATE_TYPE_ADD,        
-    EN_UPDATE_TYPE_DEL,
-    EN_UPDATE_TYPE_UPDATE,
-    EN_UPDATE_TYPE_COMPUTE_UPDATE,
-};
-
-// 静态文件的虚类
-class CStaticDataBase
-{
-public:
-    CStaticDataBase()
-    {
-        pthread_rwlock_init(&m_rw_lock_StaticData, NULL);
-        m_jStaticDataJson.clear();
-        m_jStaticDataUpdateJson.clear();
-    }
-
-    virtual ~CStaticDataBase()
-    {
-        pthread_rwlock_destroy(&m_rw_lock_StaticData);
-    }
-
-    virtual TINT32 InitStaticData(CTseLogger *poServLog) = 0;
-    virtual TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo) = 0;
-    virtual TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate) = 0;
-    virtual string GetStaticDataName(const SRouteInfo &stRouteInfo) = 0;
-
-
-protected:
-
-    // function ==> 加密字符串
-    TINT32 EncryptString(const string &strSourceData, const TUINT32 &udwSourceDataLen, string &strEncryptData, TUINT32 &udwEncryptDataLen);
-
-    // function ==> 获取字符串的md5
-    TUINT64 GetStringMD5(const string &strSourceData);
-    // function ==> 对字符串进行预处理
-    TVOID ProcessString(char *pszStr);
-    // function ==> 计算字符串的md5
-    inline TVOID MD5String(const TCHAR *string, TUCHAR *pstrReturn, TUINT32 uLength);
-
-    // 获取原始数据的md5(二进制文件)
-    TUINT64 GetRawDataMd5(const TUCHAR *pszData, const TUINT32 udwDataLen);
-    inline TVOID MD5Segment(const TUCHAR *string, TUINT32 uStringLength, TUCHAR *pstrReturn, TUINT32 uReturnLength);
-
-    template<typename TNumber>
-    static string NumToString(TNumber Input)
-    {
-        ostringstream oss;
-        oss << Input;
-        return oss.str();
-    }
-
-
-protected:
-    // 获取静态数据时对cache加读锁,更新静态数据加写锁
-    pthread_rwlock_t m_rw_lock_StaticData;
-    Json::Value m_jStaticDataJson;
-    Json::Value m_jStaticDataUpdateJson;
-    CTseLogger *m_poServLog;
-
-};
-
-
-// 静态文件：game
-class CStaticDataGame : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-};
-
-// 静态文件：doc
-class CStaticDataDoc : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-    // 获取语种的id
-    string GetDocId(const string &strDocName);
-
-    // 获取语种的名字
-    static string GetLangName(const string &strDocId);
-
-};
-
-// 静态文件：equip
-class CStaticDataEquip : public CStaticDataBase
-{
-public:    
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-// 静态文件：guide
-class CStaticDataGuide : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-// 静态文件：meta
-class CStaticDataMeta : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-
-};
-
-
-
-// 静态文件：lake
-class CStaticDataLake : public CStaticDataBase
-{
-private:
-    struct SMapDataInfo
-    {
-        TCHAR *m_pszMapData;
-        TUINT32 m_udwMapDataLen;
-
-        TVOID Reset()
-        {
-            m_pszMapData = NULL;
-            m_udwMapDataLen = 0;
-        }
-
-        SMapDataInfo()
-        {
-            Reset();
-        }
-    };
-
-
-public:
-    CStaticDataLake();
-    ~CStaticDataLake();
-
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-public:
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, TCHAR *pMapData, TUINT32 &udwMapDataLen);
-
-    // 获取sid
-    string GetLakeSid(const string &strLakeName);
-    
-    // 获取map数据文件的大小
-    TINT32 GetMapFileSize(const string &strLakeName);
-
-private:
-    map<string, SMapDataInfo> mapSidMap;
-};
-
-
-
-// 静态文件：maintain
-class CStaticDataMaintain : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-public:
-    static TINT32 GetMaintainStatus(const SRouteInfo &stRouteInfo, const Json::Value &jMaintainPlatformJson);
-};
-
-
-// 静态文件：svr_conf
-class CStaticDataSvrConf : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-    // 获取静态文件名字
-    string GetStaticDataSvrConfName(const SRouteInfo &stRouteInfo);
-
-    // 获取静态文件名字
-    string GetStaticDataFunctionSwitchName(const SRouteInfo &stRouteInfo);
-};
-
-
-
-// 静态文件：client
-class CStaticDataClient : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-};
-
-
-
-
-// 静态文件：global_conf
-class CStaticDataGlobalConf : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-
-
-
-// 静态文件：onsale
-class CStaticDataOnsale : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLogs);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-
-// 静态文件：notice
-class CStaticDataNotice : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-
-
-// 静态文件：user_link
-class CStaticDataUserLink : public CStaticDataBase
-{
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-};
-
-
-// account_status管理器
-class CStaticDataAccountStatusMgr : public CStaticDataBase
-{
-// 私有内嵌类，程序结束时的自动释放
-private:
-    class CGarbo
-    {
-    public:
-        ~CGarbo()
-        {
-            if (CStaticDataAccountStatusMgr::m_poStaticDataAccountStatusMgr)
-            {
-                delete CStaticDataAccountStatusMgr::m_poStaticDataAccountStatusMgr;
-                CStaticDataAccountStatusMgr::m_poStaticDataAccountStatusMgr = NULL;
-            }
-        }
-    };
-    static CGarbo Garbo;                                //定义一个静态成员变量，程序结束时，系统会自动调用它的析构函数 
-
-
-    // 单例服务的相关定义
-private:
-    CStaticDataAccountStatusMgr();
-    CStaticDataAccountStatusMgr(const CStaticDataAccountStatusMgr &);
-    CStaticDataAccountStatusMgr & operator =(const CStaticDataAccountStatusMgr &stStaticDataMd5ListMgr);
-    static CStaticDataAccountStatusMgr *m_poStaticDataAccountStatusMgr;
-
-public:
-    ~CStaticDataAccountStatusMgr();
-
-    // function  ===> 实例化 
-    static CStaticDataAccountStatusMgr *GetInstance();
-
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容(不实现)
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容(不实现)
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字(不实现)
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-public:
-    TINT32 GetStaticData(const TINT32 &dwAccountStatus, SStaticFileInfo *pstStaticFileInfo);
-
-private:
-    set<string> m_setAccountStatus;
-};
-
-
-
-
-// 静态数据的md5_list管理器
-class CStaticDataMd5ListMgr : public CStaticDataBase
-{
-// 私有内嵌类，程序结束时的自动释放
-private:
-    class CGarbo
-    {
-    public:
-        ~CGarbo()
-        {
-            if (CStaticDataMd5ListMgr::m_poStaticDataMd5ListMgr)
-            {
-                delete CStaticDataMd5ListMgr::m_poStaticDataMd5ListMgr;
-                CStaticDataMd5ListMgr::m_poStaticDataMd5ListMgr = NULL;
-            }
-        }
-    };
-    static CGarbo Garbo;                                //定义一个静态成员变量，程序结束时，系统会自动调用它的析构函数 
-
-
-    // 单例服务的相关定义
-private:
-    CStaticDataMd5ListMgr();
-    CStaticDataMd5ListMgr(const CStaticDataMd5ListMgr &);
-    CStaticDataMd5ListMgr & operator =(const CStaticDataMd5ListMgr &stStaticDataMd5ListMgr);
-    static CStaticDataMd5ListMgr *m_poStaticDataMd5ListMgr;
-
-public:
-    ~CStaticDataMd5ListMgr();
-
-    // function  ===> 实例化 
-    static CStaticDataMd5ListMgr *GetInstance();
-
-public:
-    // 初始化静态数据
-    TINT32 InitStaticData(CTseLogger *poServLog);
-
-    // 获取该节点内容
-    TINT32 GetStaticData(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // 更新该节点内容(不实现)
-    TINT32 UpdateStaticData(const SRouteInfo &stRouteInfo, const TINT32 &dwOperate);
-
-    // 获取静态文件名字(不实现)
-    string GetStaticDataName(const SRouteInfo &stRouteInfo);
-
-public:
-    // 更新该节点内容
-    TINT32 UpdateMd5Data(const SRouteInfo &stRouteInfo, const string &strStaticType, const TUINT64 &uddwDeMd5, const TINT32 &dwReload);
-    
-    // 建立md5的cache
-    TINT32 GenStaticDataMd5List();
-
-
-private:
-    set<string> m_setPlatform;
-    set<string> m_setVs;
-    set<string> m_setLang;
-    set<string> m_setSid;
-    set<string> m_setStaticType;
-
-};
-
-
-
-
-
-struct SGlobalConfig
-{
-    string m_strStaticDataType;
-    string m_strPlatForm;
-    string m_strStaticFileName;
-    string m_strStaticFilePath;
-    TUINT32 m_udwTimeStamp;
-    TUINT32 m_udwReload;
-    TUINT32 m_udwUpdateType;
-
-    SGlobalConfig()
-    {
-        Reset();
-    }
-
-    TVOID Reset()
-    {
-        m_strStaticDataType = "";
-        m_strPlatForm = "";
-        m_strStaticFileName = "";
-        m_strStaticFilePath = "";
-        m_udwTimeStamp = 0;
-        m_udwReload = 0;
-        m_udwUpdateType = EN_UPDATE_TYPE_INIT;
-    }
-};
-
-struct SVersionConfig
-{
     string m_strStaticDataType;
     string m_strVersion;
     string m_strPlatForm;
-    string m_strStaticFileName;
     string m_strStaticFilePath;
-    TUINT32 m_udwTimeStamp;
-    TUINT32 m_udwReload;
-    TUINT32 m_udwUpdateType;
 
-    SVersionConfig()
+    TUINT32 m_udwFileTs;
+    TUINT32 m_udwFileSize;
+
+    string m_strRealName;
+
+    Json::Value m_jsonContent;
+    
+public:
+    CStaticFileContent()
     {
         Reset();
     }
 
     TVOID Reset()
     {
-        m_strStaticDataType = "";
-        m_strVersion = "";
-        m_strPlatForm = "";
-        m_strStaticFileName = "";
-        m_strStaticFilePath = "";
-        m_udwTimeStamp = 0;
-        m_udwReload = 0;
-        m_udwUpdateType = EN_UPDATE_TYPE_INIT;
+        m_strFileName.clear();
+        m_ucReloadFlag = 0;
+        m_strMd5.clear();
+
+        m_strStaticDataType.clear();
+        m_strVersion.clear();
+        m_strPlatForm.clear();
+        m_strStaticFilePath.clear();
+
+        m_udwFileTs = 0;
+        m_udwFileSize = 0;
+
+        m_strRealName.clear();
+
+        m_jsonContent.clear();
     }
 };
 
-
-struct SStaticFileJsonCache
-{
-    CStaticDataGame oStaticDataGame;
-    CStaticDataDoc oStaticDataDoc;
-    CStaticDataEquip oStaticDataEquip;
-    CStaticDataGuide oStaticDataGuide;
-    CStaticDataMeta oStaticDataMeta;
-    CStaticDataLake oStaticDataLake;
-    CStaticDataMaintain oStaticDataMaintain;
-    CStaticDataSvrConf oStaticDataSvrConf;
-    CStaticDataClient oStaticDataClient;
-    CStaticDataGlobalConf oStaticDataGlobalConf;
-    CStaticDataOnsale oStaticDataOnsale;
-    CStaticDataNotice oStaticDataNotice;
-    CStaticDataUserLink oStaticDataUserLink;
-
-};
-
-
 class CStaticFileMgr
 {
-    // 私有内嵌类，程序结束时的自动释放
-private:
-    class CGarbo
-    {
-    public:
-        ~CGarbo()
-        {
-            if (CStaticFileMgr::m_poStaticFileMgr)
-            {
-                delete CStaticFileMgr::m_poStaticFileMgr;
-                CStaticFileMgr::m_poStaticFileMgr = NULL;
-            }
-        }
-    };
-    static CGarbo Garbo;                                //定义一个静态成员变量，程序结束时，系统会自动调用它的析构函数 
-
-
-    // 单例服务的相关定义
 private:
     CStaticFileMgr();
     CStaticFileMgr(const CStaticFileMgr &);
@@ -741,288 +185,82 @@ public:
     // function  ===> 实例化 
     static CStaticFileMgr *GetInstance();
 
+    TINT32 CheckUpdate();
 
-
-    // 获取服务的公共接口函数
 public:
-
-    // function ==> 初始化file管理器
     TINT32 Init(CTseLogger *poLog);
+    TINT32 UnInit();
 
-    // function ==> 检测是否有静态文件更新
-    TINT32 CheckStaticFileUpdate();
+    TINT32 LoadStaticFileList();
+    TINT32 LoadStaticFile(CStaticFileContent *pobjStaticFile);
 
-    // function ==> 检测细化的静态数据是否需要计算更新
-    TINT32 CheckStaticDataCompute();
+    CStaticFileContent* GetStaticFile(string strFileType, string strPlatForm, string strVersion);
 
-    // function ==> 获取静态文件接口(除lake)
-    TINT32 GetStaticFileInfo(const string &strSaticFileType, const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-    // function ==> 获取Maintain的json(用来做登陆后的maintain校验)
-    TINT32 GetMaintainJson(const SRouteInfo &stRouteInfo, SStaticFileInfo *pstStaticFileInfo);
-
-
-    // function ==> 获取lake
-    TINT32 GetMapData(const SRouteInfo &stRouteInfo, TCHAR *pMapData, TUINT32 &udwMapDataLen);
-    
-
-
-    // 获取静态文件名字
-    string GetStaticFileMd5(const string strStaticFile, const SRouteInfo &stRouteInfo);
-
-    // 内部成员函数
 private:
+    TINT32 InitStaticFileProperty();
+    TINT32 AddStaticFileProperty(string strFileType, TBOOL bDiffPlatForm, TBOOL bDiffVersion, TBOOL bNeedLoadData = true, TBOOL bNeedMd5 = true);
+    TBOOL IsFileTypeExist(string strFileType);
+    TBOOL IsFIleTypeNeedLoadData(string strFileType);
+    TBOOL IsFileTypeNeedMd5(string strFileType);
 
+    string GetFileRealName(string strFileType, string strPlatForm, string strVersion);
 
-    // 加载静态文件
-    // function ==> 加载新的data_list.json
-    TINT32 LoadNewDataListJson(Json::Value &newDataListJson);
-    // function ==> 获取静态文件更新列表
-    TINT32 GetUpdateStaticFileList(const Json::Value &jNewDataListJson, const Json::Value &jOldDataListJson, vector<SGlobalConfig> &vecGlobalList, vector<SVersionConfig> &vecVersionList);
-    // function ==> 更新静态文件
-    TINT32 UpdateStaticFile(const vector<SGlobalConfig> &vecGlobalList, const vector<SVersionConfig> &vecVersionList);
-    // function ==> 更新data_list.json
-    TINT32 UpdateDataList(const Json::Value &jNewDataListJson);
+    TINT32 LoadNewDataListJson(Json::Value &jNewDataListJson);
+
+public://数据预处理
+    TINT32 PreprocessStaticFile(Json::Value &jContent, string strType);
+
+    TINT32 PreprocessStaticFile_Maintain(Json::Value &jContent);
+    TINT32 PreprocessStaticFile_Md5(Json::Value &jContent);
+
+public:
+    TINT32 UpdtAndGetMaintainStatus(Json::Value &jContent, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime);
+    TINT32 UpdateMd5Json(Json::Value &jContent, string strKey, string strMd5, TINT32 dwReload);
+
+public:
+    TINT32 GetStaticJson(Json::Value &jContent, string strType, SRouteInfo *pstInfo);
+
+    TINT32 GetStaticJson_Meta(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_MetaOld(Json::Value &jContent, SRouteInfo *pstInfo);
+
+    TINT32 GetStaticJson_Guide(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_Maintain(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_Notice(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_SvrConf(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_ItemSwitch(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_AlStore(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_ClientConf(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_GlobalConf(Json::Value &jContent, SRouteInfo *pstInfo);
+    TINT32 GetStaticJson_UserLinker(Json::Value &jContent, SRouteInfo *pstInfo);
+
+    TINT32 GetStaticJson_Account(Json::Value &jContent, TINT32 dwAccountStatus);
+    TINT32 GetStaticJson_Md5(Json::Value &jContent, SRouteInfo *pstInfo);
+
+public:
+    static TUINT64 GetStringMD5(const string &strSourceData);
+    static TUINT64 GetJsonMd5(Json::Value &jsonTmp);
+    static TINT32 JsonDiff(Json::Value &jsonRaw, TUINT64 uddwRawMd5, Json::Value &jsonNew, TUINT64 uddwNewMd5, Json::Value &jsonDiff);
+    static TUINT32 GetFileSize(const string &strFileName);
     
-
-    // function ==> 获取data_list.json的map形式
-    TINT32 GetDataListMap(const Json::Value &jDataListJson, map<string, SGlobalConfig> &mapGlobal, map<string, SVersionConfig> &mapVersion);
-    // function ==> 更新global静态文件
-    TINT32 GetUpdateGlobalStaticFileList(vector<SGlobalConfig> &vecGlobalList, map<string, SGlobalConfig> &mapOldGlobal, map<string, SGlobalConfig> &mapNewGlobal);
-    // function ==> 更新version静态文件
-    TINT32 GetUpdateVersionStaticFileList(vector<SVersionConfig> &vecVersionList, map<string, SVersionConfig> &mapOldVersion, map<string, SVersionConfig> &mapNewVersion);
-  
-  
-
-    // 静态文件的格式
-    string GenStaticFileResult(const string &strStaticString, const TINT32 &dwOpEncryptFlag, const vector<SStaticFileInfo> &vecStaticFileInfo);
-
-
-
-
-    // 内部成员变量
 private:
-    
+    template<typename TNumber>
+    static string NumToString(TNumber Input)
+    {
+        ostringstream oss;
+        oss << Input;
+        return oss.str();
+    }
+
+public:
+    map<string, CStaticFileContent*> m_mapStaticFileContent;
+
+private:
     CTseLogger *m_poServLog;
+    map<string, SStaticFileProperty> m_mapStaticFileProperty;
+    CMutex m_Mutex;
 
-    // 当前的data_list.json
-    Json::Value m_jDataListJson;
-
-    SStaticFileJsonCache m_stStaticFileJsonCache;
-
-
-
+public:
+    Json::Value m_jsonMd5;
 };
 
 #endif
-
-
-/************************** m_jDataListJson的结构 ***************************
-{
-	"globalconfig": 
-    {
-		"common": 
-        {
-			"${file_name}": 
-            {
-                "path": "\/globalconfig\/common\/${file_name}",
-                "timestamp": ${timestamp},
-                "reload": ${reload}
-            }
-		},
-		"ios": 
-        {
-            "${file_name}":
-            {
-                "path": "\/globalconfig\/ios\/${file_name}",
-                "timestamp": ${timestamp},
-                "reload": ${reload}
-            }
-		},
-		"android": 
-        {
-            "${file_name}":
-            {
-                "path": "\/globalconfig\/android\/${file_name}",
-                "timestamp": ${timestamp},
-                "reload": ${reload}
-            }	
-		}
-	},
-	"versionconfig": 
-    {
-		"new": 
-        {
-			"ios": 
-            {
-                "${file_name}":
-                {
-                    "path": "\/versionconfig\/new\/ios\/${file_name}",
-                    "timestamp": ${timestamp},
-                    "reload": ${reload}
-                }
-			},
-			"android": 
-            {
-                "${file_name}":
-                {
-                    "path": "\/versionconfig\/new\/android\/${file_name}",
-                    "timestamp": ${timestamp},
-                    "reload": ${reload}
-                }
-			}
-		},
-		"1.0": 
-        {
-			"ios":
-            {
-                "${file_name}":
-                {
-                    "path": "\/versionconfig\/1.0\/ios\/${file_name}",
-                    "timestamp": ${timestamp},
-                    "reload": ${reload}
-                }
-			},
-			"android": 
-            {
-                "${file_name}":
-                {
-                    "path": "\/versionconfig\/1.0\/android\/${file_name}",
-                    "timestamp": ${timestamp},
-                    "reload": ${reload}
-                }
-			}
-		}
-	}
-}
-*/
-
-
-/************************** m_stStaticFileJsonCache的结构 ***************************
-{
-	"globalconfig": 
-    {
-		"common": 
-        {
-			"${file_name}": 
-            {
-                "de": 
-                {
-                    "content": ${de_content},
-                    "md5": ${de_md5}
-                },
-                "en":
-                {
-                    "content": ${en_content},
-                    "md5": ${en_md5}
-                }
-            }
-		},
-		"ios": 
-        {
-			"${file_name}": 
-            {
-                "de": 
-                {
-                    "content": ${de_content},
-                    "md5": ${de_md5}
-                },
-                "en":
-                {
-                    "content": ${en_content},
-                    "md5": ${en_md5}
-                }
-            }
-		},
-		"android": 
-        {
-			"${file_name}": 
-            {
-                "de": 
-                {
-                    "content": ${de_content},
-                    "md5": ${de_md5}
-                },
-                "en":
-                {
-                    "content": ${en_content},
-                    "md5": ${en_md5}
-                }
-            }
-		}
-	},
-	"versionconfig": 
-    {
-		"new": 
-        {
-			"ios": 
-            {
-			    "${file_name}": 
-                {
-                    "de": 
-                    {
-                        "content": ${de_content},
-                        "md5": ${de_md5}
-                    },
-                    "en":
-                    {
-                        "content": ${en_content},
-                        "md5": ${en_md5}
-                    }
-                }
-			},
-			"android": 
-            {
-			    "${file_name}": 
-                {
-                    "de": 
-                    {
-                        "content": ${de_content},
-                        "md5": ${de_md5}
-                    },
-                    "en":
-                    {
-                        "content": ${en_content},
-                        "md5": ${en_md5}
-                    }
-                }
-			}
-		},
-		"1.0": 
-        {
-			"ios":
-            {
-			    "${file_name}": 
-                {
-                    "de": 
-                    {
-                        "content": ${de_content},
-                        "md5": ${de_md5}
-                    },
-                    "en":
-                    {
-                        "content": ${en_content},
-                        "md5": ${en_md5}
-                    }
-                }
-			},
-			"android": 
-            {
-   			    "${file_name}": 
-                {
-                    "de": 
-                    {
-                        "content": ${de_content},
-                        "md5": ${de_md5}
-                    },
-                    "en":
-                    {
-                        "content": ${en_content},
-                        "md5": ${en_md5}
-                    }
-                }
-			}
-		}
-	}
-}
-*/

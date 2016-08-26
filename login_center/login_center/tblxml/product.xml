@@ -38,6 +38,8 @@
         <Index no="0" idx_name="glb_r_pid" hash_fld="1" range_fld="-1" projection_type="2" read="30" write="30"/>
         <Index no="1" idx_name="glb_device" hash_fld="3" range_fld="-1" projection_type="2" read="30" write="30"/>
         <Index no="2" idx_name="glb_rid" hash_fld="4" range_fld="-1" projection_type="2" read="30" write="30"/>
+        <Index no="3" idx_name="glb_rid-r_pid" hash_fld="4" range_fld="1" projection_type="2" read="30" write="30"/>
+        <Index no="4" idx_name="glb_device-r_pid" hash_fld="3" range_fld="1" projection_type="2" read="30" write="30"/>        
 	</GlobalIndex>
 	<LocalIndex>
 		<!-- idx_fld:表示本地二级索引的字段编号；
@@ -47,8 +49,9 @@
 	<OpenType>
 		<Index no="0" idx_name="PRIMARY" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_PRIMARY"  />
 		<Index no="1" idx_name="glb_r_pid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_R_PID" />
-        <Index no="1" idx_name="glb_device" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_DEVICE" />
-        <Index no="1" idx_name="glb_rid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_RID" />
-        
+        <Index no="2" idx_name="glb_device" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_DEVICE" />
+        <Index no="3" idx_name="glb_rid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_RID" />
+        <Index no="4" idx_name="glb_rid-r_pid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_RID_R_PID" /> 
+        <Index no="5" idx_name="glb_device-r_pid" ret_fld="all" enum_name="ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID" />               
 	</OpenType>
 </Document>

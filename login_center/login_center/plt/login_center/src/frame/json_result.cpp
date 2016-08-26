@@ -100,103 +100,21 @@ TINT32 CJsonResult::GenResHeader(SSession* pstSession, TCHAR* pBeginPos, TCHAR* 
 
 TINT32 CJsonResult::GenResData(SSession* pstSession, TCHAR* pBeginPos, TCHAR* pEndPos)
 {
-    TUINT32 udwLengthAppend = 0;
-    TCHAR* pCurPos = pBeginPos;
-   
-
-    string strStaticFile = "";
-    string strPatform = pstSession->m_stReqParam.m_szPlatForm;
-    string strVs = pstSession->m_stReqParam.m_szVs;
-    TINT32 dwSvrId = pstSession->m_stReqParam.m_dwSvrId;
-    TINT32 dwOpEncryptFlag = pstSession->m_stReqParam.m_dwOpEncryptFlag;
-    TUINT32 udwLang = pstSession->m_stReqParam.m_udwLang;
-    vector<string> &vecResultStaticFileList = pstSession->m_stCommonResInfo.m_vecResultStaticFileList;
-    SStaticFileInfo stStaticFileInfo;
-    stStaticFileInfo.Reset();
-    SRouteInfo stRouteInfo;
-    stRouteInfo.Reset();
-  
-
-    udwLengthAppend = snprintf(pCurPos, pEndPos - pCurPos, "\"res_data\":[");
-    pCurPos += udwLengthAppend;
-
-   
-    for (TUINT32 udwIdx = 0; udwIdx < vecResultStaticFileList.size(); ++udwIdx)
-    {
-        if (0 != udwIdx)
-        {
-            udwLengthAppend = snprintf(pCurPos, pEndPos - pCurPos, ",");
-            pCurPos += udwLengthAppend;
-        }
-
-
-        stStaticFileInfo.Reset();
-        stRouteInfo.Reset();
-        stRouteInfo.m_strPlatform = strPatform;
-        stRouteInfo.m_strVs = strVs;
-        stRouteInfo.m_strSid = NumToString(dwSvrId);
-        stRouteInfo.m_strLang = NumToString(udwLang);
-        if (EN_STATIC_TYPE_ITEMSWITCH == vecResultStaticFileList[udwIdx])
-        {
-            stRouteInfo.m_strExInfo = EN_STATIC_TYPE_ITEMSWITCH;
-        }
-        if (EN_STATIC_TYPE_ALSTORE == vecResultStaticFileList[udwIdx])
-        {
-            stRouteInfo.m_strExInfo = EN_STATIC_TYPE_ALSTORE;
-        }
-
-        if (EN_STATIC_TYPE_MD5 == vecResultStaticFileList[udwIdx])
-        {
-            CStaticDataMd5ListMgr::GetInstance()->GetStaticData(stRouteInfo, &stStaticFileInfo);
-        }
-        else if (EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx])
-        {
-            CStaticDataAccountStatusMgr::GetInstance()->GetStaticData(pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, &stStaticFileInfo);
-        }
-        else
-        {
-            CStaticFileMgr::GetInstance()->GetStaticFileInfo(vecResultStaticFileList[udwIdx], stRouteInfo, &stStaticFileInfo);
-        }
-
-        
-        if (1 == dwOpEncryptFlag)
-        {
-            udwLengthAppend = snprintf(pCurPos, pEndPos - pCurPos,
-                "{\"key\":\"[%s:%lu:%u:1:%lu]\",\"data\":\"%s\"}",
-                vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_uddwEnMD5, CTimeUtils::GetUnixTime(), stStaticFileInfo.m_strEnStaticFile.length(), stStaticFileInfo.m_strEnStaticFile.c_str());
-            pCurPos += udwLengthAppend;
-
-        }
-        else
-        {
-            udwLengthAppend = snprintf(pCurPos, pEndPos - pCurPos,
-                "{\"key\":\"[%s:%lu:%u:0:%lu]\",\"data\":%s}",
-                vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_uddwDeMD5, CTimeUtils::GetUnixTime(), stStaticFileInfo.m_strDeStaticFile.length(), stStaticFileInfo.m_strDeStaticFile.c_str());
-            pCurPos += udwLengthAppend;
-        }
-
-    }
-
-    udwLengthAppend = snprintf(pCurPos, pEndPos - pCurPos, "]");
-    pCurPos += udwLengthAppend;
-
-    return pCurPos - pBeginPos;
+    //
+    return 0;
 }
 
 TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
 {
-
     m_objPbResponse.Clear();
 
-    // TINT32 dwTableOutputType = 0;
-    // TINT64 ddwSeq = 0;
-    // TINT32 dwSeqCheckType = 0;
+    TINT32 dwRet = 0;
+    Json::Value jTmpContent;
 
     // 需要压缩
     TUINT8 ucCompressFlag = 1;
 
     // 静态数据的单表内容
-    string strTableName = "";
     const TCHAR *pszData = NULL;
     TUINT32 udwDataLen = 0;
 
@@ -205,247 +123,28 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
     TUINT32 udwNetCompressRawDataLen = 0;
     unsigned long udwCompressRawDataLen = MAX_NETIO_PACKAGE_BUF_LEN;
 
-
     // 静态数据的路由信息
     SRouteInfo stRouteInfo;
     stRouteInfo.Reset();
-    string strStaticFile = "";
-    string strPatform = pstSession->m_stReqParam.m_szPlatForm;
-    string strVs = pstSession->m_stReqParam.m_szVs;
-    TINT32 dwSvrId = pstSession->m_stReqParam.m_dwSvrId;
-    // TINT32 dwOpEncryptFlag = pstSession->m_stReqParam.m_dwOpEncryptFlag;
-    TUINT32 udwLang = pstSession->m_stReqParam.m_udwLang;
-    
-    // 静态文件的json内容
-    SStaticFileInfo stStaticFileInfo;
-    stStaticFileInfo.Reset();
-
-    // 地图数据
-    // TCHAR *pszMapData = new TCHAR[600 * 1024];
-    TUINT32 udwMapDataLen = 0;
-
+    stRouteInfo.m_strPlatform = pstSession->m_stReqParam.m_szPlatForm;
+    stRouteInfo.m_strVs = pstSession->m_stReqParam.m_szVs;
+    stRouteInfo.m_strSid = NumToString(pstSession->m_stReqParam.m_dwSvrId);
+    stRouteInfo.m_udwCurTime = pstSession->m_udwReqTime;
     
     // 数据长度(压缩标志/rawdata长度/rawdata)
-    TCHAR *pPackBufBeg = &pstSession->m_szRspBuf[0];
+    TCHAR *pPackBufBeg = (TCHAR*)pstSession->m_pTmpBuf;
     TCHAR *pPackBufCur = pPackBufBeg;
     TINT32 dwTmpPackLen = 0;
     TCHAR *pTmpBuf = NULL;
 
+    // 数据输出
     vector<string> &vecResultStaticFileList = pstSession->m_stCommonResInfo.m_vecResultStaticFileList;
-
-    if (pstSession->m_stCommonResInfo.m_dwRetCode != EN_RET_CODE__SUCCESS)
-    {
-        if (vecResultStaticFileList.size() == 0)
-        {
-            pTmpBuf = pPackBufCur;
-
-            // header
-            m_objPbResponse.Clear();
-            m_objPbResponse.set_service_type(EN_SERVICE_TYPE__CLIENT__LOGIN_RSP);
-            m_objPbResponse.set_ret_code(pstSession->m_stCommonResInfo.m_dwRetCode);
-            m_objPbResponse.set_fresh_code(0);
-            m_objPbResponse.set_seq(pstSession->m_udwClientSeqNo);
-            m_objPbResponse.set_svr_seq(pstSession->m_udwSeqNo);
-            m_objPbResponse.set_game_time(CTimeUtils::GetUnixTime());
-            m_objPbResponse.set_cost_time(1);
-            m_objPbResponse.set_uid(pstSession->m_stReqParam.m_ddwUserId);
-            m_objPbResponse.set_sid(pstSession->m_stReqParam.m_dwSvrId);
-
-            // serialize
-            udwRawDataLen = m_objPbResponse.ByteSize();
-            m_objPbResponse.SerializeToArray(m_pSourceBuffer, udwRawDataLen);
-
-            //压缩标记
-            ucCompressFlag = 0;
-            (*pTmpBuf) = ucCompressFlag;
-
-            //回填数据长度
-            udwNetCompressRawDataLen = htonl(udwRawDataLen);
-            memcpy(pTmpBuf + 1, &udwNetCompressRawDataLen, 4);
-
-            // data
-            memcpy(pTmpBuf + 5, m_pSourceBuffer, udwRawDataLen);
-
-            //数据段长度
-            pPackBufCur += 1 + 4 + udwRawDataLen;
-        }
-    }
-
-    for (TUINT32 udwIdx = 0; udwIdx < vecResultStaticFileList.size(); ++udwIdx)
+    if (vecResultStaticFileList.size() == 0) //一般为出错时
     {
         pTmpBuf = pPackBufCur;
 
-        stStaticFileInfo.Reset();
-        stRouteInfo.Reset();
-        stRouteInfo.m_strPlatform = strPatform;
-        stRouteInfo.m_strVs = strVs;
-        if (EN_CLIENT_REQ_COMMAND__GETDATA == pstSession->m_stReqParam.m_udwCommandID
-            && EN_STATIC_TYPE_ALLLAKE == vecResultStaticFileList[udwIdx])
-        {
-            stRouteInfo.m_strSid = NumToString(pstSession->m_stReqParam.m_szKey[1]);
-        }
-        else
-        {
-            stRouteInfo.m_strSid = NumToString(dwSvrId);
-        }
-        stRouteInfo.m_strLang = NumToString(udwLang);
-        if (EN_STATIC_TYPE_ITEMSWITCH == vecResultStaticFileList[udwIdx])
-        {
-            stRouteInfo.m_strExInfo = EN_STATIC_TYPE_ITEMSWITCH;
-        }
-        if (EN_STATIC_TYPE_ALSTORE == vecResultStaticFileList[udwIdx])
-        {
-            stRouteInfo.m_strExInfo = EN_STATIC_TYPE_ALSTORE;
-        }
-
-
-
-        // 地图数据已二进制返回
-        m_objPbResponse.Clear();
-        if (EN_STATIC_TYPE_ALLLAKE == vecResultStaticFileList[udwIdx])
-        {
-            if (0 != CStaticFileMgr::GetInstance()->GetMapData(stRouteInfo, m_pszMapData, udwMapDataLen))
-            {
-                //delete[] pszMapData;
-                assert(0);
-            }
-            else
-            {
-                
-                pszData = m_pszMapData;
-                udwDataLen = udwMapDataLen;
-                
-
-                TableDomData *pTblData = m_objPbResponse.add_table_dom_data();
-
-                strTableName = "op_" + stRouteInfo.m_strSid + "_all_lake";
-                pTblData->set_table_name(strTableName);
-                pTblData->set_updt_type(0);
-                pTblData->set_seq_type(0);
-                pTblData->set_seq(0);
-                pTblData->set_dom_type(2);
-                pTblData->set_dom_data(pszData, udwMapDataLen);
-
-                //TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : %s [seq=%u]", strTableName.c_str(), strData.c_str(), pstSession->m_udwSeqNo));
-                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : [seq=%u]", strTableName.c_str(), pstSession->m_udwSeqNo));
-
-            }
-        }
-        else if (EN_STATIC_TYPE_MD5 == vecResultStaticFileList[udwIdx])
-        {            
-            CStaticDataMd5ListMgr::GetInstance()->GetStaticData(stRouteInfo, &stStaticFileInfo);
-        }
-        else if (EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx])
-        {
-            CStaticDataAccountStatusMgr::GetInstance()->GetStaticData(pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus, &stStaticFileInfo);
-        }
-        else
-        {
-            CStaticFileMgr::GetInstance()->GetStaticFileInfo(vecResultStaticFileList[udwIdx], stRouteInfo, &stStaticFileInfo);
-        }
-
-        if (EN_STATIC_TYPE_META == vecResultStaticFileList[udwIdx])
-        {
-            if (stStaticFileInfo.m_jDataInfoJson.empty())
-            {
-                continue;
-            }
-            for (TUINT32 udwIdy = 0; udwIdy < stStaticFileInfo.m_jDataInfoJson.size(); ++udwIdy)
-            {
-
-                pszData = NULL;
-                pszData = m_jSeri.serializeToBuffer(stStaticFileInfo.m_jDataInfoJson[udwIdy]["data"], udwDataLen);
-
-                TableDomData *pTblData = m_objPbResponse.add_table_dom_data();
-
-
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [%s] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_jDataJson[udwIdy]["key"].asString().c_str(), pstSession->m_udwSeqNo));
-                strTableName = GetDataTableName(stStaticFileInfo.m_jDataInfoJson[udwIdy]["key"].asString());
-                pTblData->set_table_name(strTableName);
-                pTblData->set_updt_type(0);
-                pTblData->set_seq_type(0);
-                pTblData->set_seq(0);
-                pTblData->set_dom_type(0);
-                pTblData->set_dom_data(pszData, udwDataLen);
-
-
-                m_jsonWriter.omitEndingLineFeed();
-                string strData = m_jsonWriter.write(stStaticFileInfo.m_jDataInfoJson[udwIdy]["data"]);
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : %s [seq=%u]", strTableName.c_str(), strData.c_str(), pstSession->m_udwSeqNo));
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : [seq=%u]", strTableName.c_str(), pstSession->m_udwSeqNo));
-                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [key_str=%s] [serial_len=%u] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_jDataInfoJson[udwIdy]["key"].asString().c_str(), udwDataLen, pstSession->m_udwSeqNo));
-
-
-
-                if (EN_STATIC_TYPE_NEW_MAINTAIN == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_NOTICE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ONSALE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_SVRCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_CLIENTCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ITEMSWITCH == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ALSTORE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_GLOBALCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_USER_LINK == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_MD5 == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx])
-                {
-                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), pstSession->m_udwSeqNo));
-                }
-
-            }
-        }
-        else if (EN_STATIC_TYPE_ALLLAKE != vecResultStaticFileList[udwIdx])
-        {
-            if (stStaticFileInfo.m_jDataJson.empty())
-            {
-                continue;
-            }
-            for (TUINT32 udwIdy = 0; udwIdy < stStaticFileInfo.m_jDataJson.size(); ++udwIdy)
-            {
-
-                pszData = NULL;
-                pszData = m_jSeri.serializeToBuffer(stStaticFileInfo.m_jDataJson[udwIdy]["data"], udwDataLen);
-
-                TableDomData *pTblData = m_objPbResponse.add_table_dom_data();
-
-
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [%s] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_jDataJson[udwIdy]["key"].asString().c_str(), pstSession->m_udwSeqNo));
-                strTableName = GetDataTableName(stStaticFileInfo.m_jDataJson[udwIdy]["key"].asString());
-                pTblData->set_table_name(strTableName);
-                pTblData->set_updt_type(0);
-                pTblData->set_seq_type(0);
-                pTblData->set_seq(0);
-                pTblData->set_dom_type(0);
-                pTblData->set_dom_data(pszData, udwDataLen);
-
-
-                m_jsonWriter.omitEndingLineFeed();
-                string strData = m_jsonWriter.write(stStaticFileInfo.m_jDataJson[udwIdy]["data"]);
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : %s [seq=%u]", strTableName.c_str(), strData.c_str(), pstSession->m_udwSeqNo));
-                // TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GenPushData_Pb [tbl=%s] : [seq=%u]", strTableName.c_str(), pstSession->m_udwSeqNo));
-                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [key_str=%s] [serial_len=%u] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), stStaticFileInfo.m_jDataJson[udwIdy]["key"].asString().c_str(), udwDataLen, pstSession->m_udwSeqNo));
-
-
-             
-                if (EN_STATIC_TYPE_NEW_MAINTAIN == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_NOTICE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ONSALE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_SVRCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_CLIENTCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ITEMSWITCH == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ALSTORE == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_GLOBALCONF == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_USER_LINK == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_MD5 == vecResultStaticFileList[udwIdx]
-                    || EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx])
-                {
-                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), pstSession->m_udwSeqNo));
-                }
-
-            }
-        }
-        
         // header
+        m_objPbResponse.Clear();
         m_objPbResponse.set_service_type(EN_SERVICE_TYPE__CLIENT__LOGIN_RSP);
         m_objPbResponse.set_ret_code(pstSession->m_stCommonResInfo.m_dwRetCode);
         m_objPbResponse.set_fresh_code(0);
@@ -460,33 +159,152 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
         udwRawDataLen = m_objPbResponse.ByteSize();
         m_objPbResponse.SerializeToArray(m_pSourceBuffer, udwRawDataLen);
 
-
         //压缩标记
+        ucCompressFlag = 0;
         (*pTmpBuf) = ucCompressFlag;
-        
-        //压缩数据
-//         udwCompressRawDataLen = MAX_NETIO_PACKAGE_BUF_LEN;
-//         compress((Bytef*)m_pCompressBuffer, &udwCompressRawDataLen, (Bytef*)m_pSourceBuffer, udwRawDataLen);//zip
-//        poEncrypt->rc4((unsigned char*)m_pCompressBuffer, udwCompressRawDataLen);//encrypt
-//         dwTmpPackLen = MAX_NETIO_PACKAGE_BUF_LEN;
-//         CUtilBase64::encode(m_pCompressBuffer, m_pCompressBuffer + udwCompressRawDataLen, pTmpBuf + 5, dwTmpPackLen);//encode
 
-        udwCompressRawDataLen = MAX_NETIO_PACKAGE_BUF_LEN;
-        compress((Bytef*)(pTmpBuf + 5), &udwCompressRawDataLen, (Bytef*)m_pSourceBuffer, udwRawDataLen);//zip
-        dwTmpPackLen = udwCompressRawDataLen;
-
-
-        TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [len=%ld] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwTmpPackLen, pstSession->m_udwSeqNo));
-        
         //回填数据长度
-        udwNetCompressRawDataLen = htonl(dwTmpPackLen);
-        memcpy(pTmpBuf+1, &udwNetCompressRawDataLen, 4);
+        udwNetCompressRawDataLen = htonl(udwRawDataLen);
+        memcpy(pTmpBuf + 1, &udwNetCompressRawDataLen, 4);
+
+        // data
+        memcpy(pTmpBuf + 5, m_pSourceBuffer, udwRawDataLen);
 
         //数据段长度
-        pPackBufCur += 1 + 4 + dwTmpPackLen;
+        pPackBufCur += 1 + 4 + udwRawDataLen;
+    }
+    else
+    {
+        for (TUINT32 udwIdx = 0; udwIdx < vecResultStaticFileList.size(); ++udwIdx)
+        {
+            TINT32 dwUpdateType = 0;
+
+            pTmpBuf = pPackBufCur;
+
+            m_objPbResponse.Clear();
+            jTmpContent.clear();
+
+            if(EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx])
+            {
+                dwRet = CStaticFileMgr::GetInstance()->GetStaticJson_Account(jTmpContent, pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus);
+            }
+            else
+            {
+                dwRet = CStaticFileMgr::GetInstance()->GetStaticJson(jTmpContent, vecResultStaticFileList[udwIdx], &stRouteInfo);
+                if(EN_STATIC_TYPE_META == vecResultStaticFileList[udwIdx])
+                {
+                    if(dwRet == EN_JSON_DIFF__EQUAL)
+                    {
+                        continue;
+                    }
+                    else if(dwRet == EN_JSON_DIFF__NEW)
+                    {
+                        dwUpdateType = 0;
+                    }
+                    else
+                    {
+                        dwUpdateType = 3;
+                    }
+                }
+            }            
+            if (dwRet < 0)
+            {
+                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GetStaticJson: [static_file_type=%s] [ret=%d] do not need to output[seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwRet, pstSession->m_udwSeqNo));
+                continue;
+            }
+
+            Json::Value::Members jsonDataKeys = jTmpContent.getMemberNames();
+            for(Json::Value::Members::iterator it = jsonDataKeys.begin(); it != jsonDataKeys.end(); ++it)
+            {
+                pszData = NULL;
+                pszData = m_jSeri.serializeToBuffer(jTmpContent[*it], udwDataLen);
+
+                TableDomData *pTblData = m_objPbResponse.add_table_dom_data();
+                pTblData->set_table_name(*it);
+                pTblData->set_updt_type(dwUpdateType);
+                pTblData->set_seq_type(0);
+                pTblData->set_seq(0);
+                pTblData->set_dom_type(0);
+                pTblData->set_dom_data(pszData, udwDataLen);
+
+
+                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [key_str=%s] [serial_len=%u] [seq=%u]", 
+                    vecResultStaticFileList[udwIdx].c_str(), (*it).c_str(), udwDataLen, pstSession->m_udwSeqNo));
+
+                if (EN_STATIC_TYPE_NEW_MAINTAIN == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_NOTICE == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_ONSALE == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_SVRCONF == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_CLIENTCONF == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_ITEMSWITCH == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_ALSTORE == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_GLOBALCONF == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_USER_LINK == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_MD5 == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_ACCOUNT_STATUS == vecResultStaticFileList[udwIdx]
+                || EN_STATIC_TYPE_META == vecResultStaticFileList[udwIdx])
+                {
+                    m_jsonWriter.omitEndingLineFeed();
+                    string strData = m_jsonWriter.write(jTmpContent[*it]);
+                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [seq=%u]", 
+                        vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), pstSession->m_udwSeqNo));
+                }
+
+            }
+
+            // header
+            m_objPbResponse.set_service_type(EN_SERVICE_TYPE__CLIENT__LOGIN_RSP);
+            m_objPbResponse.set_ret_code(pstSession->m_stCommonResInfo.m_dwRetCode);
+            m_objPbResponse.set_fresh_code(0);
+            m_objPbResponse.set_seq(pstSession->m_udwClientSeqNo);
+            m_objPbResponse.set_svr_seq(pstSession->m_udwSeqNo);
+            m_objPbResponse.set_game_time(CTimeUtils::GetUnixTime());
+            m_objPbResponse.set_cost_time(1);
+            m_objPbResponse.set_uid(pstSession->m_stReqParam.m_ddwUserId);
+            m_objPbResponse.set_sid(pstSession->m_stReqParam.m_dwSvrId);
+
+            // serialize
+            udwRawDataLen = m_objPbResponse.ByteSize();
+            m_objPbResponse.SerializeToArray(m_pSourceBuffer, udwRawDataLen);
+
+
+            //压缩标记
+            (*pTmpBuf) = ucCompressFlag;
+
+            //压缩数据
+            udwCompressRawDataLen = MAX_NETIO_PACKAGE_BUF_LEN;
+            compress((Bytef*)(pTmpBuf + 5), &udwCompressRawDataLen, (Bytef*)m_pSourceBuffer, udwRawDataLen);//zip
+            dwTmpPackLen = udwCompressRawDataLen;
+
+            TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [len=%ld] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwTmpPackLen, pstSession->m_udwSeqNo));
+
+            //回填数据长度
+            udwNetCompressRawDataLen = htonl(dwTmpPackLen);
+            memcpy(pTmpBuf+1, &udwNetCompressRawDataLen, 4);
+
+            //数据段长度
+            pPackBufCur += 1 + 4 + dwTmpPackLen;
+        }
+        
+        if(pstSession->m_stReqParam.m_udwCommandID == EN_CLIENT_REQ_COMMAND__INIT && pstSession->m_dwRspLen > 0)
+        {
+            //hu rsp
+            pTmpBuf = pPackBufCur;
+            //压缩标记
+            (*pTmpBuf) = pstSession->m_ucHuCompressFlag;
+            //数据
+            memcpy(pTmpBuf+5, &pstSession->m_szRspBuf[0], pstSession->m_dwRspLen);
+            dwTmpPackLen = pstSession->m_dwRspLen;
+            TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=login_get] [len=%ld] [seq=%u]", dwTmpPackLen, pstSession->m_udwSeqNo));
+            //回填数据长度
+            udwNetCompressRawDataLen = htonl(dwTmpPackLen);
+            memcpy(pTmpBuf+1, &udwNetCompressRawDataLen, 4);
+            //数据段长度
+            pPackBufCur += 1 + 4 + dwTmpPackLen;
+        }
     }
 
-    pstSession->m_dwRspLen = pPackBufCur - pPackBufBeg;
+    pstSession->m_dwTmpLen = pPackBufCur - pPackBufBeg;
 
     return pPackBufBeg;
 

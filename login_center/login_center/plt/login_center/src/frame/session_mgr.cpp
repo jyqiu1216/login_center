@@ -79,7 +79,10 @@ int CSessionMgr::ReleaseSession(SSession *session)
 	{
 		poDownMgr->zk_ReleaseNode(3U, session->m_pstAwsProxyNode);
 	}
-
+    if(session->m_bHuNodeExist)
+    {
+        poDownMgr->zk_ReleaseNode(25U, session->m_pstHuNode);
+    }
 
 	session->Reset();
 

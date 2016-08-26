@@ -504,8 +504,7 @@ TVOID CTaskProcess::ResetSessionTmpParam(SSession *pstSession)
     pstSession->m_pstHttpParam = &m_stHttpParam;
     pstSession->m_pszReqBuf = &m_szReqBuf[0];
     pstSession->m_udwReqBufLen = 0;
-
-
+    pstSession->m_pTmpBuf = &m_szTmpBuf[0];
 }
 
 TVOID CTaskProcess::PrintLog(SSession *pstSession)
@@ -516,7 +515,7 @@ TVOID CTaskProcess::PrintLog(SSession *pstSession)
         pstSession->m_stCommonResInfo.m_dwRetCode, uddwCostTime, \
         pstSession->m_stReqParam.m_dwSvrId, pstSession->m_stReqParam.m_szIp, \
         pstSession->m_stReqParam.m_ddwUserId,
-        pstSession->m_dwRspLen,
+        pstSession->m_dwTmpLen,
         pstSession->m_uddwAwsReadSumTime,
         pstSession->m_uddwAwsWriteSumTime,
         pstSession->m_uddwAwsReadWriteSumTime,
@@ -570,7 +569,7 @@ TINT32 CTaskProcess::SendBackResult_Binary( SSession *pstSession )
     pobjPack->SetKey(EN_GLOBAL_KEY__RES_COST_TIME, pstSession->m_stCommonResInfo.m_uddwCostTime);
     pobjPack->SetKey(EN_GLOBAL_KEY__TARGET_UID, pstSession->m_stReqParam.m_ddwUserId);
     pobjPack->SetKey(EN_GLOBAL_KEY__RES_BUF_COMPRESS_FLAG, ucCompressFlag);
-    pobjPack->SetKey(EN_GLOBAL_KEY__RES_BUF, (TUCHAR*)&pstSession->m_szRspBuf[0], pstSession->m_dwRspLen);
+    pobjPack->SetKey(EN_GLOBAL_KEY__RES_BUF, (TUCHAR*)&pstSession->m_pTmpBuf[0], pstSession->m_dwTmpLen);
 
     pobjPack->GetPackage(&pucPackage, &udwPackageLen);
 

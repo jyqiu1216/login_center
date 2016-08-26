@@ -30,6 +30,9 @@ private:
 	TINT32  OnAwsResponse(LTasksGroup *pstTasksGrp, SSession *poSession);
 	TINT32	ParseAwsResponse(TUCHAR *pszPack, TUINT32 udwPackLen, AwsRspInfo* pAwsRspInfo);
 
+    TINT32 OnHuResponse(LTasksGroup *pstTasksGrp, SSession *poSession);
+    TINT32 ParseHuResponse(TUCHAR *pszPack, TUINT32 udwPackLen, SSession *poSession);
+
 
 private:
 	//  ´´½¨¼àÌýsocket

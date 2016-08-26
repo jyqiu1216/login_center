@@ -24,27 +24,42 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
 
     if (EN_LOGIN_TPYE_DEBUG == pstUserInfo->m_dwLoginTpye)
     {
-        Json::Reader reader;
-        Json::Value jProductInfo;
-        if (false == reader.parse(pstUserInfo->m_tbProduct[0].Get_Product_info().c_str(), jProductInfo))
+        if (0 == pstUserInfo->m_dwProductNum)
         {
-            pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_PRODUCTION_INFO_INVAILD;
+            pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_USER_DATA_NOT_EXIST;
             return 0;
         }
         else
         {
-            Json::FastWriter rWriter;
-            rWriter.omitEndingLineFeed();
-            jProductInfo["device"] = stLoginInfo.m_strDevice;
-            jProductInfo["idfa"] = stLoginInfo.m_strDevice;
-            stLoginInfo.m_strProductInfo = rWriter.write(jProductInfo);
-            ptbTmpProduct = &pstUserInfo->m_tbProduct[0];
+            Json::Reader reader;
+            Json::Value jProductInfo;
+            if (false == reader.parse(pstUserInfo->m_tbProduct[0].Get_Product_info().c_str(), jProductInfo))
+            {
+                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_PRODUCTION_INFO_INVAILD;
+                return 0;
+            }
+            /*
+            else if (stLoginInfo.m_strDevice != jProductInfo["device"].asString())
+            {
+                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_MULTI_LOGIN;
+                return 0;
+            }
+            */
+            else
+            {
+                Json::FastWriter rWriter;
+                rWriter.omitEndingLineFeed();
+                jProductInfo["device"] = stLoginInfo.m_strDevice;
+                jProductInfo["idfa"] = stLoginInfo.m_strDevice;
+                stLoginInfo.m_strProductInfo = rWriter.write(jProductInfo);
+                ptbTmpProduct = &pstUserInfo->m_tbProduct[0];
 
-            // 默认帐号没有注册(debug情况下帐号状态不重要)
-            pstUserInfo->m_stUserStatus.m_ddwUid = strtol(ptbTmpProduct->Get_App_uid().c_str(), NULL, 10);
-            pstUserInfo->m_stUserStatus.m_ddwSid = ptbTmpProduct->Get_Sid();
-            pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_UNREGISTER;
-            return 0;
+                // 默认帐号没有注册(debug情况下帐号状态不重要)
+                pstUserInfo->m_stUserStatus.m_ddwUid = strtol(ptbTmpProduct->Get_App_uid().c_str(), NULL, 10);
+                pstUserInfo->m_stUserStatus.m_ddwSid = ptbTmpProduct->Get_Sid();
+                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_UNREGISTER;
+                return 0;
+            }
         }
     }
 
@@ -252,7 +267,7 @@ TINT32 CAccountLogic::GetUpdatePlayerStatus(SUserInfo *pstUserInfo, const SLogin
 
     if (0 == pstUserInfo->m_dwProductNum)
     {
-        pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_USER_DATA_NOT_EXIST;
+        pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_IMPORT;
         return 0;
     }
     else

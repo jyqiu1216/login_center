@@ -237,6 +237,10 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
     TUINT16         uwServType = 0;
     TUINT32         udwLinkerCmdRef = 100;
 
+
+    string strIp = "";
+
+
     // 1. ½â°ü
     m_pUnPackTool->UntachPackage();
     m_pUnPackTool->AttachPackage((TUCHAR *)pszData, udwDataLen);
@@ -252,11 +256,22 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
         return S_FAIL;
     }
 
+    if (FALSE == m_pUnPackTool->GetVal(EN_GLOBAL_KEY__CLIENT_IP, &pszValBuf, &udwValBufLen))
+    {
+        TSE_LOG_ERROR(m_pLog, ("Client request get EN_GLOBAL_KEY__CLIENT_IP fail [seq=%u]", m_udwSeqno));
+    }
+    else
+    {
+        strIp.resize(udwValBufLen);
+        memcpy((char*)strIp.c_str(), pszValBuf, udwValBufLen);
+    }
+
     if (FALSE == m_pUnPackTool->GetVal(EN_GLOBAL_KEY__REQ_BUF, &pszValBuf, &udwValBufLen))
     {
         TSE_LOG_ERROR(m_pLog, ("Client request get EN_GLOBAL_KEY__REQ_BUF fail [seq=%u]", m_udwSeqno));
         return S_FAIL;
     }
+
 
     m_pobjClientReq->Clear();
     if(false == m_pobjClientReq->ParseFromArray(pszValBuf, udwValBufLen))
@@ -281,6 +296,7 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
     pSession->m_ucIsUsing = 1;
     pSession->m_udwExpectProcedure = EN_PROCEDURE__CLIENT_REQUEST;
     pSession->m_uddwTimeBeg = CTimeUtils::GetCurTimeUs();
+    pSession->m_udwReqTime = CTimeUtils::GetUnixTime();
     pSession->m_udwSeqNo = m_udwSeqno;
     pSession->m_stUserInfo.m_udwBSeqNo = pSession->m_udwSeqNo;
     pSession->m_udwClientSeqNo = m_pobjClientReq->seq();
@@ -288,6 +304,9 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
     TUINT32 udwReqLen = m_pobjClientReq->req_url().size();
     memcpy(pSession->m_szClientReqBuf, m_pobjClientReq->req_url().c_str(), udwReqLen);
     pSession->m_szClientReqBuf[udwReqLen] = 0;
+
+    memcpy(pSession->m_stReqParam.m_szIp, strIp.c_str(), strIp.length());
+
     pSession->m_udwClientReqBufLen = udwReqLen;
     pSession->m_dwClientReqMode = EN_CLIENT_REQ_MODE__TCP;
 

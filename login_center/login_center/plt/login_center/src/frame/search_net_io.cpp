@@ -101,6 +101,9 @@ void CSearchNetIO::OnTasksFinishedCallBack( LTasksGroup *pstTasksGrp )
     case EN_EXPECT_PROCEDURE__AWS:
 		OnAwsResponse(pstTasksGrp, poSession);
 		break;
+    case EN_EXPECT_PROCEDURE__HU:
+        OnHuResponse(pstTasksGrp, poSession);
+        break;
 	default :
 		TSE_LOG_ERROR(m_poServLog, ("Invalid expect service type[%u] [seq=%u]", poSession->m_udwExpectProcedure, poSession->m_udwSeqNo));
 		break;
@@ -365,6 +368,127 @@ TINT32 CSearchNetIO::ParseAwsResponse(TUCHAR *pszPack, TUINT32 udwPackLen, AwsRs
 	}
 
 	return 0;	
+}
+
+TINT32 CSearchNetIO::OnHuResponse( LTasksGroup *pstTasksGrp, SSession *poSession )
+{
+    LTask               *pstTask                = 0;
+    TCHAR               *pszIp                  = 0;
+    TUINT16             uwPort                  = 0;
+    TUINT32				udwIdx					= 0;
+    TINT32				dwRetCode				= 0;
+
+    poSession->m_dwHuCostTime = 0;
+    poSession->m_dwHuRetCode = 0;
+    poSession->m_ucHuCompressFlag = 0;
+
+    poSession->m_uddwDownRqstTimeEnd = CTimeUtils::GetCurTimeUs();
+
+    for(udwIdx = 0; udwIdx < pstTasksGrp->m_uValidTasks; udwIdx++)
+    {
+        pstTask = &pstTasksGrp->m_Tasks[udwIdx];
+
+        GetIp2PortByHandle(pstTask->hSession, &uwPort, &pszIp);
+
+        TSE_LOG_DEBUG(m_poServLog, ("aws res: taskid[%u]: [ip=%s] [port=%u] [send=%u], [recv=%u], [timeout=%u], [donw_busy=%u], [socket_closed=%u], [verify_failed=%u] [recv_data_len=%u] [cost_time=%llu]us [req_type=%u] [seq=%u]",
+            udwIdx, \
+            pszIp, \
+            uwPort, \
+            pstTask->_ucIsSendOK, \
+            pstTask->_ucIsReceiveOK, \
+            pstTask->_ucTimeOutEvent, \
+            pstTask->_ucIsDownstreamBusy, \
+            pstTask->_ucIsSockAlreadyClosed, \
+            pstTask->_ucIsVerifyPackFail, \
+            pstTask->_uReceivedDataLen, \
+            poSession->m_uddwDownRqstTimeEnd - poSession->m_uddwDownRqstTimeBeg, \
+            poSession->m_udwDownRqstType, \
+            poSession->m_udwSeqNo));
+
+        if(0 == pstTask->_ucIsSendOK || 0 == pstTask->_ucIsReceiveOK || 1 == pstTask->_ucTimeOutEvent )
+        {
+            // 加入超时统计
+            if(poSession->m_bHuNodeExist)
+            {
+                CDownMgr::Instance()->zk_AddTimeOut(poSession->m_pstHuNode);
+            }
+            TSE_LOG_ERROR(m_poServLog, ("aws res: [send=%u], [recv=%u], [timeout=%u], [cost_time=%llu]us [seq=%u]",
+                pstTask->_ucIsSendOK, \
+                pstTask->_ucIsReceiveOK, \
+                pstTask->_ucTimeOutEvent, \
+                poSession->m_uddwDownRqstTimeEnd - poSession->m_uddwDownRqstTimeBeg, \
+                poSession->m_udwSeqNo));
+            if(EN_RET_CODE__SUCCESS == poSession->m_stCommonResInfo.m_dwRetCode)
+            {
+                poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__TIMEOUT;
+                dwRetCode = -1;
+            }
+        }
+        else
+        {
+            if (pstTask->_uReceivedDataLen > MAX_NETIO_PACKAGE_BUF_LEN)
+            {
+                TSE_LOG_ERROR(m_poServLog, ("aws res: recv_data_len[%u]>MAX_HS_RES_DATA_LEN [cost_time=%llu]us [seq=%u]",
+                    pstTask->_uReceivedDataLen, \
+                    poSession->m_uddwDownRqstTimeEnd - poSession->m_uddwDownRqstTimeBeg, \
+                    poSession->m_udwSeqNo));
+                if(EN_RET_CODE__SUCCESS == poSession->m_stCommonResInfo.m_dwRetCode)
+                {
+                    poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PACKAGE_LEN_OVERFLOW;
+                    dwRetCode = -2;
+                }
+            }
+            else
+            {
+                dwRetCode = ParseHuResponse(pstTask->_pReceivedData, pstTask->_uReceivedDataLen, poSession);
+                if(dwRetCode < 0)
+                {
+                    // 加入错误统计
+                    if (poSession->m_bAwsProxyNodeExist)
+                    {
+                        CDownMgr::Instance()->zk_AddError(poSession->m_pstHuNode);
+                    }
+
+                    TSE_LOG_ERROR(m_poServLog, ("aws res: parse failed[%d] [seq=%u]", \
+                        dwRetCode, \
+                        poSession->m_udwSeqNo));
+                    if(EN_RET_CODE__SUCCESS == poSession->m_stCommonResInfo.m_dwRetCode)
+                    {
+                        poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PARSE_PACKAGE_ERR;
+                        dwRetCode = -3;
+                    }
+                    // break;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+TINT32 CSearchNetIO::ParseHuResponse( TUCHAR *pszPack, TUINT32 udwPackLen, SSession *poSession )
+{
+    TUCHAR *pszValBuf = NULL;
+    TUINT32 udwValBufLen = 0;
+
+
+    m_pUnPackTool->UntachPackage();
+    m_pUnPackTool->AttachPackage(pszPack, udwPackLen);
+    if(FALSE == m_pUnPackTool->Unpack())
+    {
+        return -1;
+    }
+    
+    m_pUnPackTool->GetVal(EN_GLOBAL_KEY__RES_CODE, &poSession->m_dwHuRetCode);
+    m_pUnPackTool->GetVal(EN_GLOBAL_KEY__RES_COST_TIME, &poSession->m_dwHuCostTime);
+    m_pUnPackTool->GetVal(EN_GLOBAL_KEY__RES_BUF_COMPRESS_FLAG, &poSession->m_ucHuCompressFlag);
+    if(m_pUnPackTool->GetVal(EN_GLOBAL_KEY__RES_BUF, &pszValBuf, &udwValBufLen))
+    {
+        memcpy((char*)poSession->m_szRspBuf, pszValBuf, udwValBufLen);
+        poSession->m_dwRspLen = udwValBufLen;
+    }
+    
+    return 0;
 }
 
 
