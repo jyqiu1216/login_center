@@ -114,6 +114,9 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 tbProduct.Set_Rid(strRid);
                 tbProduct.Set_R_pid(strRPid);
                 CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_RID_R_PID, CompareDesc(), false);
+                tbProduct.Set_Device(strDevice);
+                tbProduct.Set_R_pid(strRPid);
+                CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID, CompareDesc(), false);
                 tbUser.Set_Email(strEmail);
                 CAwsRequest::Query(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_GLB_EMAIL, CompareDesc(), false);
                 break;
@@ -152,125 +155,148 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
         AwsRspInfo *pstAwsRspInfo = NULL;
         TINT32 dwRetcode = 0;
-
-      for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
-      {
-          pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
-          string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
-          if (strTableRawName == EN_AWS_TABLE_PRODUCT)
-          {
-              switch (pstAwsRspInfo->udwIdxNo)
-              {
-                  case ETbPRODUCT_OPEN_TYPE_PRIMARY:
-                      dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
-                      if (dwRetCode >= 0)
-                      {
-                          pstUserInfo->m_dwProductNum = dwRetCode;
-                      }                      
-                      break;
-                  case ETbPRODUCT_OPEN_TYPE_GLB_DEVICE:
-                      dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct, sizeof(TbProduct), MAX_PRODUCT_NUM);
-                      if (dwRetcode >= 0)
-                      {
-                          pstUserInfo->m_dwProductNum = dwRetcode;
-                      }
-                      break;
-                  case ETbPRODUCT_OPEN_TYPE_GLB_RID:
-                      dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct, sizeof(TbProduct), MAX_PRODUCT_NUM);
-                      if (dwRetcode >= 0)
-                      {
-                          pstUserInfo->m_dwProductNum = dwRetcode;
-                      }
-                      break;
-                  case ETbPRODUCT_OPEN_TYPE_GLB_RID_R_PID:
-                      dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct, sizeof(TbProduct), MAX_PRODUCT_NUM);
-                      if (dwRetcode >= 0)
-                      {
-                          pstUserInfo->m_dwProductNum = dwRetcode;
-                      }
-                      break;
-                  case ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID:
-                      dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct, sizeof(TbProduct), MAX_PRODUCT_NUM);
-                      if (dwRetcode >= 0)
-                      {
-                          pstUserInfo->m_dwProductNum = dwRetcode;
-                      }
-                      break;
-                  default:
-                      break;
-              }
-
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]", 
-                    pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
-
-                continue;
-            }
-            if (strTableRawName == EN_AWS_TABLE_USER)
+        
+        if (EN_LOGIN_TPYE_ACCOUNT == pstSession->m_stUserInfo.m_dwLoginTpye) {
+            TbProduct *ptbProduct_Rid = NULL;
+            TbProduct *ptbProduct_Device = NULL;
+            TINT32 dwProductNum_Rid = 0;
+            TINT32 dwProductNum_Device = 0;
+            for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
             {
-                dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbUser, sizeof(TbUser), MAX_MAX_NUM);
-                if (dwRetcode >= 0)
+                pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
+                string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
+                if (strTableRawName == EN_AWS_TABLE_PRODUCT)
                 {
-                    pstUserInfo->m_dwUserNum = dwRetcode;
+                    switch (pstAwsRspInfo->udwIdxNo)
+                    {
+                        case ETbPRODUCT_OPEN_TYPE_GLB_RID_R_PID:
+                            dwProductNum_Rid = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct_Rid, sizeof(TbProduct), MAX_PRODUCT_NUM);
+                            break;
+                        case ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID:
+                            dwProductNum_Device = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct_Device, sizeof(TbProduct), MAX_PRODUCT_NUM);
+                            break;
+                      default:
+                            break;
+                    }
 
-                    TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                    TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]", 
                         pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
+                    continue;
                 }
-                continue;
+                if (strTableRawName == EN_AWS_TABLE_USER)
+                {
+                    dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbUser, sizeof(TbUser), MAX_MAX_NUM);
+                    if (dwRetcode >= 0)
+                    {
+                        pstUserInfo->m_dwUserNum = dwRetcode;
+                        TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                        pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
+                    }
+                    continue;
+                }
+            }
+
+            if (0 == dwProductNum_Rid && 0 < dwProductNum_Device)
+            {
+                ptbProduct = ptbProduct_Device;
+                pstUserInfo->m_dwProductNum = dwProductNum_Device;
+            }
+            else
+            {
+                ptbProduct = ptbProduct_Rid;
+                pstUserInfo->m_dwProductNum = dwProductNum_Rid;
+            }
+
+        }
+        else{
+            for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
+            {
+                pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
+                string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
+                if (strTableRawName == EN_AWS_TABLE_PRODUCT)
+                {
+                    switch (pstAwsRspInfo->udwIdxNo)
+                    {
+                        case ETbPRODUCT_OPEN_TYPE_PRIMARY:
+                            dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
+                            if (dwRetCode >= 0)
+                            {
+                                pstUserInfo->m_dwProductNum = dwRetCode;
+                            }                      
+                            break;
+                        case ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID:
+                            dwRetcode = CAwsResponse::OnQueryRsp(*pstAwsRspInfo, ptbProduct, sizeof(TbProduct), MAX_PRODUCT_NUM);
+                            if (dwRetcode >= 0)
+                            {
+                                pstUserInfo->m_dwProductNum = dwRetcode;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
+                    TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]", 
+                        pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
+                    continue;
+                }
+                else
+                {
+                    assert(0);
+                }
             }
         }
 
-      //new game
-      if (1L == dwNewGameFlag)
-      {
-          pstSession->m_stReqParam.m_dwSvrId = 0;
-          pstSession->m_stReqParam.m_ddwUserId = 0;
-          vector<TbProduct *> vecTbProduct;
-          pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
-          bNeedResponse = TRUE;
+        //new game
+        if (1L == dwNewGameFlag)
+        {
+            pstSession->m_stReqParam.m_dwSvrId = 0;
+            pstSession->m_stReqParam.m_ddwUserId = 0;
+            vector<TbProduct *> vecTbProduct;
+            pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
+            bNeedResponse = TRUE;
+    
+            pstSession->ResetAwsReq();
 
-          pstSession->ResetAwsReq();
-
-          for (TINT32 dwIdx = 0; dwIdx < pstUserInfo->m_dwProductNum; dwIdx++)
-          {
-              if (strRPid == pstUserInfo->m_tbProduct[dwIdx].Get_R_pid()
-                  && 0 == pstUserInfo->m_tbProduct[dwIdx].Get_Status()
-                  && "0" != pstUserInfo->m_tbProduct[dwIdx].Get_Device())
-              {
-                  TSE_LOG_INFO(pstSession->m_poServLog, ("[kurotest] NEW GAME device:[%s]", pstUserInfo->m_tbProduct[dwIdx].Get_Device().c_str()));
-                  pstUserInfo->m_tbProduct[dwIdx].Set_Device("0");
-                  vecTbProduct.push_back(&pstUserInfo->m_tbProduct[dwIdx]);
-
-                  dwRetCode = CAwsRequest::UpdateItem(pstSession->m_vecAwsReq, &pstUserInfo->m_tbProduct[dwIdx]);
-                  if (dwRetCode != 0)
-                  {
-                      TSE_LOG_DEBUG(pstSession->m_poServLog, ("CProcessInit::requestHandler: not clear device [seq=%u]",
-                          pstSession->m_udwSeqNo));
-                  }
-              }
-          }
+            for (TINT32 dwIdx = 0; dwIdx < pstUserInfo->m_dwProductNum; dwIdx++)
+            {
+                if (strRPid == pstUserInfo->m_tbProduct[dwIdx].Get_R_pid()
+                    && 0 == pstUserInfo->m_tbProduct[dwIdx].Get_Status()
+                    && "0" != pstUserInfo->m_tbProduct[dwIdx].Get_Device())
+                {
+                    TSE_LOG_INFO(pstSession->m_poServLog, ("[kurotest] NEW GAME device:[%s]", pstUserInfo->m_tbProduct[dwIdx].Get_Device().c_str()));
+                    pstUserInfo->m_tbProduct[dwIdx].Set_Device("0");
+                    vecTbProduct.push_back(&pstUserInfo->m_tbProduct[dwIdx]);   
+                    dwRetCode = CAwsRequest::UpdateItem(pstSession->m_vecAwsReq, &pstUserInfo->m_tbProduct[dwIdx]);
+                    if (dwRetCode != 0)
+                    {
+                        TSE_LOG_DEBUG(pstSession->m_poServLog, ("CProcessInit::requestHandler: not clear device [seq=%u]",
+                            pstSession->m_udwSeqNo));
+                    }
+                }
+            }
           
-          if (0 != vecTbProduct.size())
-          {
-              pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
-              dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
-              if (dwRetCode < 0)
-              {
-                  pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
-                  TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
-                  return -3;
-              }
+            if (0 != vecTbProduct.size())
+            {
+                pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+                 dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
+                if (dwRetCode < 0)
+                {
+                    pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
+                    TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
+                    return -3;
+                }
               
-              return 0;
-          }
-          else
-          {
-              pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
-          }
-      }
-      else
-      {
-          pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
-      }
+                return 0;
+            }
+            else
+            {
+                pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
+            }
+        }
+        else
+        {
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
+        }
 
     }
 
