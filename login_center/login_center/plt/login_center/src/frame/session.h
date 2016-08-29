@@ -188,8 +188,16 @@ struct SUserInfo
 
     TINT32 m_dwProductNum;
     TbProduct m_tbProduct[MAX_PRODUCT_NUM];
-    TINT32 m_dwUserNum;
+    
     TbUser m_tbUser[MAX_MAX_NUM];
+
+
+    TINT32 m_dwRidProductNum;
+    TbProduct m_tbRidProduct;
+    TINT32 m_dwDeviceProductNum;
+    TbProduct m_atbDeviceProduct[MAX_PRODUCT_NUM];
+    TINT32 m_dwUserNum;
+    TbUser m_tbUserNew;
 
     TINT32 m_dwLoginTpye;  // 用户登录形式
     SUserStatus m_stUserStatus;
@@ -202,16 +210,19 @@ struct SUserInfo
     TVOID Reset()
     {
         m_udwBSeqNo = 0;
-        m_dwProductNum = 0;
-        for (TUINT32 udwIdx = 0; udwIdx < sizeof(m_tbProduct) / sizeof(m_tbProduct[0]); ++udwIdx)
+        
+        m_dwRidProductNum = 0;
+        m_tbRidProduct.Reset();
+
+        m_dwDeviceProductNum = 0;
+        for (TUINT32 udwIdx = 0; udwIdx < MAX_PRODUCT_NUM; ++udwIdx)
         {
-            m_tbProduct[udwIdx].Reset();
+            m_atbDeviceProduct[udwIdx].Reset();
         }
+
         m_dwUserNum = 0;
-        for (TUINT32 udwIdx = 0; udwIdx < sizeof(m_tbUser) / sizeof(m_tbUser[0]); ++udwIdx)
-        {
-            m_tbUser[udwIdx].Reset();
-        }
+        m_tbUserNew.Reset();
+
         m_dwLoginTpye = EN_LOGIN_TPYE_VISTOR;
         m_stUserStatus.Reset();
     }

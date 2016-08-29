@@ -12,8 +12,8 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
     TINT32 dwRetCode = 0;
     string strRPid = kstrRPid;
     SUserInfo *pstUserInfo = &pstSession->m_stUserInfo;
-    TbProduct *ptbProduct = pstUserInfo->m_tbProduct;
-    TbUser *ptbUser = pstUserInfo->m_tbUser;
+    TbProduct *ptbProduct = &pstUserInfo->m_tbRidProduct;
+    TbUser *ptbUser = &pstUserInfo->m_tbUserNew;
     string strRid = pstSession->m_stReqParam.m_szRid;
     string strDevice = pstSession->m_stReqParam.m_szDevice;
 
@@ -88,7 +88,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
                 dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
                 if (dwRetCode >= 0)
                 {
-                    pstUserInfo->m_dwProductNum = dwRetCode;
+                    pstUserInfo->m_dwRidProductNum = dwRetCode;
                 }
                 continue;
             }
