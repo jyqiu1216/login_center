@@ -41,18 +41,10 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
 
         pstSession->ResetAwsInfo();
 
-        
         TbProduct tbProduct;
         tbProduct.Set_App_uid(NumToString(pstSession->m_stReqParam.m_ddwUserId));
         tbProduct.Set_R_pid(strRPid);
         CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_PRIMARY);
-
-        if ("" != strRid)
-        {
-            TbUser tbUser;
-            tbUser.Set_Rid(strRid);
-            CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_PRIMARY);
-        }
 
         dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
         if (dwRetCode < 0)
@@ -75,48 +67,87 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
             return 0;
         }
 
-
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__3;
         AwsRspInfo *pstAwsRspInfo = NULL;
-
         for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
         {
             pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
             string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
-            if (strTableRawName == EN_AWS_TABLE_PRODUCT)
+            dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
+            if (dwRetCode >= 0)
             {
-                dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
-                if (dwRetCode >= 0)
-                {
-                    pstUserInfo->m_dwRidProductNum = dwRetCode;
-                }
-                continue;
+                TSE_LOG_ERROR(pstSession->m_poServLog, ("PRODUCTNUM productnum=%d [seq=%u]", dwRetCode, pstSession->m_udwSeqNo));
+                pstUserInfo->m_dwRidProductNum = dwRetCode;
             }
-            if (strTableRawName == EN_AWS_TABLE_USER)
+        }
+    }
+
+    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
+    {
+        if ("" != ptbProduct->Get_Rid())
+        {
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__4;
+            pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
+            bNeedResponse = TRUE;
+            pstSession->ResetAwsInfo();
+            TbUser tbUser;
+            tbUser.Set_Rid(ptbProduct->Get_Rid());
+            CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_PRIMARY);
+
+            dwRetCode = CBaseProcedure::SendAwsRequest(pstSession, EN_SERVICE_TYPE_QUERY_DYNAMODB_REQ);
+            if (dwRetCode < 0)
             {
-                dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbUser);
-                if (dwRetCode >= 0)
-                {
-                    pstUserInfo->m_dwUserNum = dwRetCode;
-                }
-                continue;
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
+                TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
+                return -1;
             }
-        }     
-            
+            return 0;
+        }
+        else
+        {
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
+        }
+    }
+
+    if (EN_COMMAND_STEP__4 == pstSession->m_udwCommandStep)
+    {
+        if (EN_RET_CODE__SUCCESS != pstSession->m_stCommonResInfo.m_dwRetCode)
+        {
+            //pstSession->m_stCommonResInfo.m_dwRetCode = 10000;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+
+
+        pstSession->m_udwCommandStep = EN_COMMAND_STEP__5;
+        AwsRspInfo *pstAwsRspInfo = NULL;
+        for (TUINT32 udIdx = 0; udIdx < pstSession->m_vecAwsRsp.size(); ++udIdx)
+        {
+            pstAwsRspInfo = pstSession->m_vecAwsRsp[udIdx];
+            string strTableRawName = CBaseProcedure::GetTableRawName(pstAwsRspInfo->sTableName);
+            dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbUser);
+            if (dwRetCode >= 0)
+            {
+                pstUserInfo->m_dwUserNum = dwRetCode;
+            }
+
+            TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
+        }
+    }
+
+    if (EN_COMMAND_STEP__5 == pstSession->m_udwCommandStep)
+    {
         // 获取玩家帐号信息
         SLoginInfo stLoginInfo;
         stLoginInfo.Reset();
         stLoginInfo.m_strRid = strRid;
         stLoginInfo.m_strDevice = strDevice;
 
-
         CAccountLogic::GetUpdatePlayerStatus(&pstSession->m_stUserInfo, stLoginInfo);
-       
     }
-
-   
-
-    if (EN_COMMAND_STEP__3 == pstSession->m_udwCommandStep)
+        
+    if (EN_COMMAND_STEP__5 == pstSession->m_udwCommandStep)
     {
         pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_MD5);
         pstSession->m_stCommonResInfo.m_vecResultStaticFileList.push_back(EN_STATIC_TYPE_ACCOUNT_STATUS);

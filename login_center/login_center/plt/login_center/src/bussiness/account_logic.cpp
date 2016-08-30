@@ -203,7 +203,7 @@ TINT32 CAccountLogic::GetUpdatePlayerStatus(SUserInfo *pstUserInfo, const SLogin
     // 必有游戏数据
     if (0 == pstUserInfo->m_dwUserNum)
     {
-        if ("" == stLoginInfo.m_strRid)
+        if ("" == pstUserInfo->m_tbRidProduct.Get_Rid())
         {
             pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_UNREGISTER;
             return 0;

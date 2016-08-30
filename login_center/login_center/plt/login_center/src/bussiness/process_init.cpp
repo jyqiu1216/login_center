@@ -105,13 +105,13 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
        
         switch (pstSession->m_stUserInfo.m_dwLoginTpye) {
             case EN_LOGIN_TPYE_VISTOR:
-                TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: VISITOR   Device:[%s]", strDevice.c_str()));
+                TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: VISITOR   Device:[%s]   [seq=%u]", strDevice.c_str(), pstSession->m_udwSeqNo));
                 tbProduct.Set_Device(strDevice);
                 tbProduct.Set_R_pid(strRPid);
                 CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_DEVICE_R_PID, CompareDesc(), false);
                 break;
              case EN_LOGIN_TPYE_ACCOUNT:
-                TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: ACCOUNT   Rid:[%s], Email:[%s]", strRid.c_str(), strEmail.c_str()));
+                 TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: ACCOUNT   Rid:[%s], Email:[%s]   [seq=%u]", strRid.c_str(), strEmail.c_str(), pstSession->m_udwSeqNo));
                 tbProduct.Set_Rid(strRid);
                 tbProduct.Set_R_pid(strRPid);
                 CAwsRequest::Query(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_GLB_RID_R_PID, CompareDesc(), false);
@@ -122,7 +122,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbUser, ETbUSER_OPEN_TYPE_PRIMARY);
                 break;
             case EN_LOGIN_TPYE_DEBUG:
-                TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: DEBUG    App_uid:[%ld]    R_pid[%s]", ddwUid, strRPid.c_str()));
+                TSE_LOG_DEBUG(pstSession->m_poServLog, ("TYPE: DEBUG    App_uid:[%ld]    R_pid[%s]   [seq=%u]", ddwUid, strRPid.c_str(), pstSession->m_udwSeqNo));
                 tbProduct.Set_App_uid(NumToString(ddwUid));
                 tbProduct.Set_R_pid(strRPid);
                 CAwsRequest::GetItem(pstSession->m_vecAwsReq, &tbProduct, ETbPRODUCT_OPEN_TYPE_PRIMARY);
