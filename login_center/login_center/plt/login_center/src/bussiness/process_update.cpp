@@ -76,9 +76,10 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
             dwRetCode = CAwsResponse::OnGetItemRsp(*pstAwsRspInfo, ptbProduct);
             if (dwRetCode >= 0)
             {
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("PRODUCTNUM productnum=%d [seq=%u]", dwRetCode, pstSession->m_udwSeqNo));
                 pstUserInfo->m_dwRidProductNum = dwRetCode;
             }
+            TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
         }
     }
 

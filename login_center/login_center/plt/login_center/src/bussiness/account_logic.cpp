@@ -45,13 +45,15 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         else if (1 == pstUserInfo->m_dwUserNum)
         {
             // 帐号信息不一致
-            if (pstUserInfo->m_tbUserNew.Get_Email() != stLoginInfo.m_strEmail)
+            if ("" != stLoginInfo.m_strEmail)
             {
-                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD;
-                TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
-                return 0;
+                if (pstUserInfo->m_tbUserNew.Get_Email() != stLoginInfo.m_strEmail)
+                {
+                    pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD;
+                    TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                    return 0;
+                }
             }
-
             // 帐号密码不一致
             if ("null" != stLoginInfo.m_strPasswd)
             {
