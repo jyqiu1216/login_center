@@ -558,11 +558,11 @@ TINT32 CStaticFileMgr::GetStaticJson_MetaOld( Json::Value &jContent, SRouteInfo 
 {
     CStaticFileContent *pobjMeta = GetStaticFile(EN_STATIC_TYPE_META, pstInfo->m_strPlatform, pstInfo->m_strVs);
 
-    //string strS3CdnUrl = "http://d2ggugd94z1qg1.cloudfront.net/" + CConfBase::GetString("project") + "/versionconfig";
-    //string strS3BackUpUrl = "http://bob-pro.simpysam.com/pro_sys/data_meta/globalconfig/";
+    string strS3CdnUrl = "http://d2ggugd94z1qg1.cloudfront.net/" + CConfBase::GetString("project") + "/versionconfig";
+    string strS3BackUpUrl = "http://bob-pro.simpysam.com/pro_sys/data_meta/globalconfig/";
 
-    string strS3CdnUrl = "http://leyi-game-static-file-test.s3.cn-north-1.amazonaws.com.cn/bob_test_group/versionconfig";
-    string strS3BackUpUrl = "http://leyi-game-static-file-test.s3.cn-north-1.amazonaws.com.cn/bob_test_group/versionconfig";
+    //string strS3CdnUrl = "http://leyi-game-static-file-test.s3.cn-north-1.amazonaws.com.cn/bob_test_group/versionconfig";
+    //string strS3BackUpUrl = "http://leyi-game-static-file-test.s3.cn-north-1.amazonaws.com.cn/bob_test_group/versionconfig";
 
     //string strS3CdnUrl = "http://54.223.156.94:9090/op.simpysam.com/bob_test_group_op_sys/pro_sys/data/versionconfig";
     //string strS3BackUpUrl = "http://54.223.156.94:9090/op.simpysam.com/bob_test_group_op_sys/pro_sys/data/versionconfig";

@@ -22,6 +22,8 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
     TINT64 ddwUid = pstSession->m_stReqParam.m_ddwUserId;
     TINT32 dwSid = pstSession->m_stReqParam.m_dwSvrId;
 
+    string strVs = pstSession->m_stReqParam.m_szVs;
+
     SUserInfo *pstUserInfo = &pstSession->m_stUserInfo;
     TbProduct *patbDeviceProduct = &pstUserInfo->m_atbDeviceProduct[0];
     TbProduct *ptbRidProduct = &pstUserInfo->m_tbRidProduct;
@@ -309,25 +311,53 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         }
         else if (EN_PLAYER_STATUS_PASSWORD_CHANGE == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PASSWORD_CHANGE;
+            if ("1.2" == strVs)
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PASSWORD_CHANGE;
+            }
+            else
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_BLACK_ACCOUNT == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__BLACK_ACCOUNT;
+            if ("1.2" == strVs)
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__BLACK_ACCOUNT;
+            }
+            else
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40008;
+            }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_INFO_INVAILD;
+            if ("1.2" == strVs)
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_INFO_INVAILD;
+            }
+            else
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_ACCOUNT_NOT_GAME_DATA == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_NOT_GAME_DATA;
+            if ("1.2" == strVs)
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_NOT_GAME_DATA;
+            }
+            else
+            {
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+            }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
