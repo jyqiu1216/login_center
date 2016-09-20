@@ -262,8 +262,16 @@ int CHuWork::ProcessReqParam(RequestParam *pstReqParam, SSession *pstSession)
         }
         else if (0 == strcmp(pstHttpParam->key, "vs"))
         {
-            strncpy(pstReq->m_szVs, pstHttpParam->value, DEFAULT_NAME_STR_LEN - 1);
-            pstReq->m_szVs[DEFAULT_NAME_STR_LEN - 1] = '\0';
+            strncpy(pstReq->m_szUpdateVs, pstHttpParam->value, DEFAULT_NAME_STR_LEN - 1);
+            pstReq->m_szUpdateVs[DEFAULT_NAME_STR_LEN - 1] = '\0';
+            if(strcmp(pstReq->m_szUpdateVs, "1.3") == 0)
+            {
+                strcpy(pstReq->m_szVs, "1.2");
+            }
+            else
+            {
+                strcpy(pstReq->m_szVs, pstReq->m_szUpdateVs);
+            }
         }
         else if (0 == strcmp(pstHttpParam->key, "pid"))
         {

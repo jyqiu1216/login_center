@@ -100,8 +100,11 @@ struct SRouteInfo
 {
     string m_strPlatform;
     string m_strVs;
+    string m_strUpdateVs;
     string m_strSid;
+    string m_strDevice;
     TUINT32 m_udwCurTime;
+    TINT64  m_ddwUid;
 
     SRouteInfo()
     {
@@ -112,8 +115,11 @@ struct SRouteInfo
     {
         m_strPlatform = "";
         m_strVs = "";
+        m_strUpdateVs = "";
         m_strSid = "";
+        m_strDevice = "";
         m_udwCurTime = 0;
+        m_ddwUid = 0;
     }
 };
 
@@ -203,6 +209,8 @@ private:
     TBOOL IsFIleTypeNeedLoadData(string strFileType);
     TBOOL IsFileTypeNeedMd5(string strFileType);
 
+    TINT32 IsWhiteAccount(string strDevice);
+
     string GetFileRealName(string strFileType, string strPlatForm, string strVersion);
 
     TINT32 LoadNewDataListJson(Json::Value &jNewDataListJson);
@@ -214,7 +222,7 @@ public://数据预处理
     TINT32 PreprocessStaticFile_Md5(Json::Value &jContent);
 
 public:
-    TINT32 UpdtAndGetMaintainStatus(Json::Value &jContent, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime);
+    TINT32 UpdtAndGetMaintainStatus(Json::Value &jContent, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime, string strDevice);
     TINT32 UpdateMd5Json(Json::Value &jContent, string strKey, string strMd5, TINT32 dwReload);
 
 public:

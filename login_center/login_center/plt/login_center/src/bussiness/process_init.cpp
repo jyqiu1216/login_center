@@ -50,7 +50,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         // 判断是否有全服Maintain和版本强制更新
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 
-            pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime);
+            pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szUpdateVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime, pstSession->m_stReqParam.m_szDevice);
         if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus)
         {
             bHasMaintain = FALSE;
@@ -311,52 +311,52 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         }
         else if (EN_PLAYER_STATUS_PASSWORD_CHANGE == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            if ("1.2" == strVs)
+            if ("1.1" == strVs)
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PASSWORD_CHANGE;
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
             }
             else
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PASSWORD_CHANGE;
             }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_BLACK_ACCOUNT == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            if ("1.2" == strVs)
+            if ("1.1" == strVs)
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__BLACK_ACCOUNT;
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40008;
             }
             else
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = 40008;
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__BLACK_ACCOUNT;
             }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            if ("1.2" == strVs)
+            if ("1.1" == strVs)
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_INFO_INVAILD;
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
             }
             else
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_INFO_INVAILD;
             }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
         else if (EN_PLAYER_STATUS_ACCOUNT_NOT_GAME_DATA == pstSession->m_stUserInfo.m_stUserStatus.m_ddwStatus)
         {
-            if ("1.2" == strVs)
+            if ("1.1" == strVs)
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_NOT_GAME_DATA;
+                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
             }
             else
             {
-                pstSession->m_stCommonResInfo.m_dwRetCode = 40007;
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__ACCOUNT_NOT_GAME_DATA;
             }
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
@@ -456,7 +456,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         // 分服mintain
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 
-            pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime);
+            pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szUpdateVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime, pstSession->m_stReqParam.m_szDevice);
         if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus)
         {
             bHasMaintain = FALSE;

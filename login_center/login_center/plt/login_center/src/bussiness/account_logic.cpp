@@ -98,6 +98,9 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         }
         else
         {
+            // ÉèÖÃÕËºÅ×´Ì¬
+            pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_UNACTIVE;
+
             // Ñ¡È¡productÊý¾Ý
             for (TINT32 dwIdx = 0; dwIdx < pstUserInfo->m_dwDeviceProductNum; ++dwIdx)
             {
@@ -108,19 +111,6 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
                     break;
                 }
             }
-
-            if (NULL == ptbProduct && 0 < pstUserInfo->m_dwDeviceProductNum)
-            {
-                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD;
-                TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
-                return 0;
-            }
-            else
-            {
-                // ÉèÖÃÕËºÅ×´Ì¬
-                pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_UNACTIVE;
-            }
-
         }
     }
     else // EN_LOGIN_TPYE_VISTOR == pstUserInfo->m_dwLoginTpye

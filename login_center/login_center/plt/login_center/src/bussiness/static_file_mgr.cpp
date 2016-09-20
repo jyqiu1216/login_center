@@ -360,13 +360,14 @@ string CStaticFileMgr::GetFileRealName( string strFileType, string strPlatForm, 
     return strFileRealName;
 }
 
-TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime )
+TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime, string strDevice)
 {
     m_Mutex.acquire();
 
     TUINT32 udwMaintainBeg = 0;
     TUINT32 udwMaintainEnd = 0;
     TINT32 dwRetStatus = EN_MAINTAIN_TYPE_NORMAL;
+    TINT32 dwIsWhiteUid = 0;
 
     // global——修正url
     if ("android" == strPlatForm)
@@ -377,6 +378,9 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     {
         //do nothing
     }
+
+    //判断是否为白名单
+    dwIsWhiteUid = IsWhiteAccount(strDevice);
 
     // global——强制更新
     TINT32 dwGlobalUpdt = EN_MAINTAIN_TYPE_NORMAL;
@@ -433,6 +437,10 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     {
         jMaintainJson["global"]["status"] = EN_MAINTAIN_TYPE_NORMAL;
     }
+    if (0 != dwIsWhiteUid)
+    {
+        jMaintainJson["global"]["status"] = EN_MAINTAIN_TYPE_NORMAL;
+    }
 
     // svr——修改时间和状态,所有节点都需遍历修改
     if (!jMaintainJson["svrList"].empty())
@@ -469,9 +477,18 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     // svr——判断当前svr的状态
     if(jMaintainJson["svrList"].isMember(strSid))
     {
-        if (jMaintainJson["svrList"][strSid]["status"].asUInt() == EN_MAINTAIN_TYPE_MAINTAINING)
+        if (0 != dwIsWhiteUid)
+        {
+            jMaintainJson["svrList"][strSid]["status"] = EN_MAINTAIN_TYPE_NORMAL;
+            dwRetStatus = EN_MAINTAIN_TYPE_NORMAL;
+        }
+        else if (jMaintainJson["svrList"][strSid]["status"].asUInt() == EN_MAINTAIN_TYPE_MAINTAINING && 0 == dwIsWhiteUid)
         {
             dwRetStatus = EN_MAINTAIN_TYPE_MAINTAINING;
+        }
+        else
+        {
+           //do nothing
         }
     }
 
@@ -481,6 +498,32 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     m_Mutex.release();
     return dwRetStatus;
 }
+
+TINT32 CStaticFileMgr::IsWhiteAccount(string strDevice)
+{
+    string strWhite_uid = CConfBase::GetString("white_uid");
+    TSE_LOG_DEBUG(m_poServLog, ("[kurotest]CStaticFileMgr::LoadConfJson Json content [json=%s]", strWhite_uid.c_str()));
+    Json::Reader reader;
+    Json::Value jWhite_uid;
+    jWhite_uid.clear();
+    if (false == reader.parse(strWhite_uid.c_str(), jWhite_uid))
+    {
+        TSE_LOG_ERROR(m_poServLog, ("CStaticFileMgr::LoadConfJson, LoadConfJson failed. [size=%d]", jWhite_uid.size()));
+        return -1;
+    }
+    TSE_LOG_DEBUG(m_poServLog, ("CStaticFileMgr::LoadConfJson [size=%d]", jWhite_uid["white_list"].size()));
+
+    for (TINT32 dwIdx = 0; dwIdx < jWhite_uid["white_list"].size(); dwIdx++)
+    {
+        if (strDevice == jWhite_uid["white_list"][dwIdx].asString())
+        {
+            TSE_LOG_INFO(m_poServLog, ("CStaticFileMgr::IsWhiteAccount, [device=%s]", strDevice.c_str()));
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 TINT32 CStaticFileMgr::GetStaticJson( Json::Value &jContent, string strType, SRouteInfo *pstInfo )
 {
@@ -592,7 +635,7 @@ TINT32 CStaticFileMgr::GetStaticJson_Maintain( Json::Value &jContent, SRouteInfo
     CStaticFileContent *pobjConent = GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstInfo->m_strPlatform, pstInfo->m_strVs);
     jContent["op_new_maintain"] = pobjConent->m_jsonContent;
 
-    UpdtAndGetMaintainStatus(jContent["op_new_maintain"], pstInfo->m_strPlatform, pstInfo->m_strVs, pstInfo->m_strSid, pstInfo->m_udwCurTime);
+    UpdtAndGetMaintainStatus(jContent["op_new_maintain"], pstInfo->m_strPlatform, pstInfo->m_strUpdateVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
 
     return 0;
 }
@@ -653,7 +696,7 @@ TINT32 CStaticFileMgr::GetStaticJson_Md5( Json::Value &jContent, SRouteInfo *pst
 {
     //更新maintain信息
     CStaticFileContent *pobjConent = GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstInfo->m_strPlatform, pstInfo->m_strVs);
-    CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, pstInfo->m_strPlatform, pstInfo->m_strVs, pstInfo->m_strSid, pstInfo->m_udwCurTime);
+    CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, pstInfo->m_strUpdateVs, pstInfo->m_strVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
 
     jContent["op_md5"] = CStaticFileMgr::GetInstance()->m_jsonMd5;
     return 0;

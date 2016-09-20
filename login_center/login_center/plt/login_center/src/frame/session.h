@@ -119,6 +119,7 @@ struct SReqParam
     TINT64              m_ddwUserId;                        // user global id
     TUINT32             m_udwSeqNo;
     TCHAR               m_szVs[DEFAULT_NAME_STR_LEN];
+    TCHAR               m_szUpdateVs[DEFAULT_NAME_STR_LEN];
     TCHAR               m_szPid[DEFAULT_NAME_STR_LEN];
     TCHAR               m_szRid[DEFAULT_NAME_STR_LEN];
     TCHAR               m_szPlatForm[DEFAULT_NAME_STR_LEN];
@@ -145,6 +146,7 @@ struct SReqParam
 
         m_udwSeqNo = 0;
         m_szVs[0] = '\0';
+        m_szUpdateVs[0] = 0;
         m_szPid[0] = '\0';
         m_szRid[0] = '\0';
         m_szPlatForm[0] = '\0';
