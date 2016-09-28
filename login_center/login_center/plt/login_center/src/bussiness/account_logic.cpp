@@ -21,7 +21,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         if (0 == pstUserInfo->m_dwRidProductNum)
         {
             pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_USER_DATA_NOT_EXIST;
-            TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+            TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
             return 0;
         }
         else
@@ -39,7 +39,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         {
             // 同一邮箱注册了多次
             pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_MULTI_EMAIL;
-            TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+            TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
             return 0;
         }
         else if (1 == pstUserInfo->m_dwUserNum)
@@ -50,7 +50,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
                 if (pstUserInfo->m_tbUserNew.Get_Email() != stLoginInfo.m_strEmail)
                 {
                     pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD;
-                    TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                    TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
                     return 0;
                 }
             }
@@ -60,7 +60,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
                 if (pstUserInfo->m_tbUserNew.Get_Passwd() != stLoginInfo.m_strPasswd)
                 {
                     pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_INFO_INVAILD;
-                    TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                    TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
                     return 0;
                 }
             }
@@ -70,7 +70,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
             if (1 == pstUserInfo->m_tbUserNew.Get_Pwd_flag())
             {
                 pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_PASSWORD_CHANGE;
-                TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
                 return 0;
             }
 
@@ -78,7 +78,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
             if (1 == pstUserInfo->m_tbUserNew.Get_Status())
             {
                 pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_BLACK_ACCOUNT;
-                TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
                 return 0;
             }
 
@@ -86,7 +86,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
             if (pstUserInfo->m_dwRidProductNum == 0)
             {
                 pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_ACCOUNT_NOT_GAME_DATA;
-                TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+                TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
                 return 0;
             }
 
@@ -146,7 +146,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         if (false == reader.parse(ptbProduct->Get_Product_info().c_str(), jProductInfo))
         {
             pstUserInfo->m_stUserStatus.m_ddwStatus = EN_PLAYER_STATUS_PRODUCTION_INFO_INVAILD;
-            TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
+            TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: status=%ld", pstUserInfo->m_stUserStatus.m_ddwStatus));
             return 0;
         }
         else
@@ -165,7 +165,7 @@ TINT32 CAccountLogic::GetInitPlayerStatus(SUserInfo *pstUserInfo, const SLoginIn
         }
     }
 
-    TSE_LOG_ERROR(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: type=%d user_num=%d product_rid_num=%d product_device_num=%d, res---uid=%ld, sid=%ld, status=%ld", \
+    TSE_LOG_INFO(CGameSvrInfo::GetInstance()->m_poServLog, ("[wavetest] GetInitPlayerStatus: type=%d user_num=%d product_rid_num=%d product_device_num=%d, res---uid=%ld, sid=%ld, status=%ld", \
         pstUserInfo->m_dwLoginTpye, pstUserInfo->m_dwUserNum, pstUserInfo->m_dwRidProductNum, pstUserInfo->m_dwDeviceProductNum, \
         pstUserInfo->m_stUserStatus.m_ddwUid, pstUserInfo->m_stUserStatus.m_ddwSid, pstUserInfo->m_stUserStatus.m_ddwStatus));
 

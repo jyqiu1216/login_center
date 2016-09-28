@@ -128,7 +128,6 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
     stRouteInfo.Reset();
     stRouteInfo.m_strPlatform = pstSession->m_stReqParam.m_szPlatForm;
     stRouteInfo.m_strUpdateVs = pstSession->m_stReqParam.m_szUpdateVs;
-    stRouteInfo.m_strUpdateVs = pstSession->m_stReqParam.m_szUpdateVs;
     stRouteInfo.m_strVs = pstSession->m_stReqParam.m_szVs;
     stRouteInfo.m_strSid = NumToString(pstSession->m_stReqParam.m_dwSvrId);
     stRouteInfo.m_strDevice = pstSession->m_stReqParam.m_szDevice;

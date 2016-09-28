@@ -193,7 +193,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 {
                     assert(0);
                 }
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                     pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 continue;
             }
@@ -203,7 +203,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 if (dwRetcode >= 0)
                 {
                     pstUserInfo->m_dwUserNum = dwRetcode;
-                    TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                    TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                         pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
                 }
                 continue;
@@ -247,7 +247,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
               {
                   pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
                   TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
-                  return -3;
+                  return -1;
               }
               
               return 0;
@@ -423,7 +423,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 {
                     pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
                     TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
-                    return -3;
+                    return -1;
                 }
 
                 return 0;

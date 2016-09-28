@@ -78,7 +78,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
             {
                 pstUserInfo->m_dwRidProductNum = dwRetCode;
             }
-            TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+            TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                 pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
         }
     }
@@ -132,7 +132,7 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
                 pstUserInfo->m_dwUserNum = dwRetCode;
             }
 
-            TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+            TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                 pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
         }
     }

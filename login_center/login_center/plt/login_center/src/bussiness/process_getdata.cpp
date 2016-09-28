@@ -197,9 +197,8 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
                 {
                     assert(0);
                 }
-                TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+                TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                     pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
-                continue;
             }
         }
     }
@@ -213,7 +212,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__6;
             pstSession->m_udwExpectProcedure = EN_EXPECT_PROCEDURE__AWS;
             bNeedResponse = TRUE;
-            TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: logintype=%d rid=%s [seq=%u]", pstSession->m_stUserInfo.m_dwLoginTpye, ptbRidProduct->Get_Rid().c_str(), pstSession->m_udwSeqNo));
+            TSE_LOG_INFO(pstSession->m_poServLog, ("[kurotest]: logintype=%d rid=%s [seq=%u]", pstSession->m_stUserInfo.m_dwLoginTpye, ptbRidProduct->Get_Rid().c_str(), pstSession->m_udwSeqNo));
 
             pstSession->ResetAwsInfo();
             TbUser tbUser;
@@ -236,7 +235,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             pstUserInfo->m_atbDeviceProduct[0] = *ptbRidProduct;
             pstUserInfo->m_dwDeviceProductNum = pstUserInfo->m_dwRidProductNum;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__7;
-            TSE_LOG_ERROR(pstSession->m_poServLog, ("[kurotest]: logintype=%d device=%s  devicenum=%d [seq=%u]", pstSession->m_stUserInfo.m_dwLoginTpye, pstUserInfo->m_atbDeviceProduct[0].Get_Device().c_str(), pstUserInfo->m_dwDeviceProductNum, pstSession->m_udwSeqNo));
+            TSE_LOG_INFO(pstSession->m_poServLog, ("[kurotest]: logintype=%d device=%s  devicenum=%d [seq=%u]", pstSession->m_stUserInfo.m_dwLoginTpye, pstUserInfo->m_atbDeviceProduct[0].Get_Device().c_str(), pstUserInfo->m_dwDeviceProductNum, pstSession->m_udwSeqNo));
         }
     }
 
@@ -261,7 +260,7 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
                 pstUserInfo->m_dwUserNum = dwRetCode;
             }
 
-            TSE_LOG_ERROR(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
+            TSE_LOG_INFO(pstSession->m_poServLog, ("[wavetest]: tbl=%s rspp=%s [seq=%u]",
                 pstAwsRspInfo->sTableName.c_str(), pstAwsRspInfo->sRspContent.c_str(), pstSession->m_udwSeqNo));
         }
     }
