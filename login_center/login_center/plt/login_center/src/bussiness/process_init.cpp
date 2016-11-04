@@ -247,7 +247,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
               {
                   pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
                   TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
-                  return -1;
+                  return -3;
               }
               
               return 0;
@@ -423,7 +423,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
                 {
                     pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__SEND_FAIL;
                     TSE_LOG_ERROR(pstSession->m_poServLog, ("CProcessInit::requestHandler: send req failed [seq=%u]", pstSession->m_udwSeqNo));
-                    return -1;
+                    return -3;
                 }
 
                 return 0;

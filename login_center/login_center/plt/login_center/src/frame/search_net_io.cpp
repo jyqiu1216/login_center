@@ -298,8 +298,8 @@ TINT32  CSearchNetIO::OnAwsResponse(LTasksGroup *pstTasksGrp, SSession *poSessio
                                                 poSession->m_udwSeqNo));
                     if(EN_RET_CODE__SUCCESS == poSession->m_stCommonResInfo.m_dwRetCode)
                     {
-    					poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PARSE_PACKAGE_ERR;
-    					dwRetCode = -3;
+                        poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PARSE_AWS_PACKAGE_ERR;
+                        dwRetCode = -3;
                     }
 					// break;
 				}
@@ -390,7 +390,7 @@ TINT32 CSearchNetIO::OnHuResponse( LTasksGroup *pstTasksGrp, SSession *poSession
 
         GetIp2PortByHandle(pstTask->hSession, &uwPort, &pszIp);
 
-        TSE_LOG_DEBUG(m_poServLog, ("aws res: taskid[%u]: [ip=%s] [port=%u] [send=%u], [recv=%u], [timeout=%u], [donw_busy=%u], [socket_closed=%u], [verify_failed=%u] [recv_data_len=%u] [cost_time=%llu]us [req_type=%u] [seq=%u]",
+        TSE_LOG_DEBUG(m_poServLog, ("hu res: taskid[%u]: [ip=%s] [port=%u] [send=%u], [recv=%u], [timeout=%u], [donw_busy=%u], [socket_closed=%u], [verify_failed=%u] [recv_data_len=%u] [cost_time=%llu]us [req_type=%u] [seq=%u]",
             udwIdx, \
             pszIp, \
             uwPort, \
@@ -412,7 +412,7 @@ TINT32 CSearchNetIO::OnHuResponse( LTasksGroup *pstTasksGrp, SSession *poSession
             {
                 CDownMgr::Instance()->zk_AddTimeOut(poSession->m_pstHuNode);
             }
-            TSE_LOG_ERROR(m_poServLog, ("aws res: [send=%u], [recv=%u], [timeout=%u], [cost_time=%llu]us [seq=%u]",
+            TSE_LOG_ERROR(m_poServLog, ("hu res: [send=%u], [recv=%u], [timeout=%u], [cost_time=%llu]us [seq=%u]",
                 pstTask->_ucIsSendOK, \
                 pstTask->_ucIsReceiveOK, \
                 pstTask->_ucTimeOutEvent, \
@@ -428,7 +428,7 @@ TINT32 CSearchNetIO::OnHuResponse( LTasksGroup *pstTasksGrp, SSession *poSession
         {
             if (pstTask->_uReceivedDataLen > MAX_NETIO_PACKAGE_BUF_LEN)
             {
-                TSE_LOG_ERROR(m_poServLog, ("aws res: recv_data_len[%u]>MAX_HS_RES_DATA_LEN [cost_time=%llu]us [seq=%u]",
+                TSE_LOG_ERROR(m_poServLog, ("hu res: recv_data_len[%u]>MAX_HS_RES_DATA_LEN [cost_time=%llu]us [seq=%u]",
                     pstTask->_uReceivedDataLen, \
                     poSession->m_uddwDownRqstTimeEnd - poSession->m_uddwDownRqstTimeBeg, \
                     poSession->m_udwSeqNo));
@@ -449,12 +449,12 @@ TINT32 CSearchNetIO::OnHuResponse( LTasksGroup *pstTasksGrp, SSession *poSession
                         CDownMgr::Instance()->zk_AddError(poSession->m_pstHuNode);
                     }
 
-                    TSE_LOG_ERROR(m_poServLog, ("aws res: parse failed[%d] [seq=%u]", \
+                    TSE_LOG_ERROR(m_poServLog, ("hu res: parse failed[%d] [seq=%u]", \
                         dwRetCode, \
                         poSession->m_udwSeqNo));
                     if(EN_RET_CODE__SUCCESS == poSession->m_stCommonResInfo.m_dwRetCode)
                     {
-                        poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PARSE_PACKAGE_ERR;
+                        poSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__PARSE_HU_PACKAGE_ERR;
                         dwRetCode = -3;
                     }
                     // break;
@@ -488,6 +488,11 @@ TINT32 CSearchNetIO::ParseHuResponse( TUCHAR *pszPack, TUINT32 udwPackLen, SSess
         poSession->m_dwRspLen = udwValBufLen;
     }
     
+    if (poSession->m_dwHuRetCode != 0)
+    {
+        TSE_LOG_ERROR(m_poServLog, ("hu res: poSession->m_dwHuRetCode=%d\n", poSession->m_dwHuRetCode));
+        return -2;
+    }
     return 0;
 }
 

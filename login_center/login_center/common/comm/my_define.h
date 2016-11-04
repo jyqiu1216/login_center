@@ -25,7 +25,8 @@
 
 
 // bobµÄr_pid
-const string kstrRPid = "1";
+//const string kstrRPid = "2";    //online
+const string kstrRPid = "1";    //test
 
 enum EClientReqMode
 {
@@ -181,7 +182,8 @@ enum ERetCode
     EN_RET_CODE__SEND_FAIL = 41003,
     EN_RET_CODE__TIMEOUT = 41004,
     EN_RET_CODE__PACKAGE_LEN_OVERFLOW = 41005,
-    EN_RET_CODE__PARSE_PACKAGE_ERR = 41006,
+    EN_RET_CODE__PARSE_AWS_PACKAGE_ERR = 41006,
+    EN_RET_CODE__PARSE_HU_PACKAGE_ERR = 41007,
 
     EN_RET_CODE__POS_NOT_AVAILABLE = 41010,
     EN_RET_CODE__GET_LOCK_FAIL = 41011,
@@ -200,6 +202,7 @@ enum ERetCode
     EN_RET_CODE_ERROR_SID = 42020,
     EN_RET_CODE_ERROR_UID = 42021,
     EN_RET_CODE_FATAL_ERROR = 42022,
+    EN_RET_CODE__STATICFILE_ERROR = 42023,
 
     EN_RET_CODE__END,
 };
