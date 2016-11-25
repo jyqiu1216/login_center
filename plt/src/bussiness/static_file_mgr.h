@@ -198,7 +198,7 @@ public:
     TINT32 UnInit();
 
     TINT32 LoadStaticFileList();
-    TINT32 LoadStaticFile(CStaticFileContent *pobjStaticFile);
+    TINT32 LoadStaticFile(CStaticFileContent *pobjStaticFile, string strPlatForm, string strVersion);
 
     CStaticFileContent* GetStaticFile(string strFileType, string strPlatForm, string strVersion);
 
@@ -224,6 +224,7 @@ public://数据预处理
 public:
     TINT32 UpdtAndGetMaintainStatus(Json::Value &jContent, string strPlatForm, string strVersion, string strSid, TUINT32 udwCurTime, string strDevice);
     TINT32 UpdateMd5Json(Json::Value &jContent, string strKey, string strMd5, TINT32 dwReload);
+    TINT32 UpdateMd5Json_Version(Json::Value &jContent, string strKey, string strMd5, TINT32 dwReload, string strPlatForm, string strVersion);
 
 public:
     TINT32 GetStaticJson(Json::Value &jContent, string strType, SRouteInfo *pstInfo);
@@ -268,7 +269,9 @@ private:
     CMutex m_Mutex;
 
 public:
+    //md5 Json Value
     Json::Value m_jsonMd5;
+    Json::Value m_jsonMd5_version;
 };
 
 #endif

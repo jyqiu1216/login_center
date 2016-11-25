@@ -131,7 +131,7 @@ TINT32 CStaticFileMgr::LoadStaticFileList()
                     }
 
                     // load json
-                    dwRet = LoadStaticFile(pobjContent);
+                    dwRet = LoadStaticFile(pobjContent, pobjContent->m_strPlatForm, pobjContent->m_strVersion);
                     if(dwRet != 0)
                     {
                         TSE_LOG_ERROR(m_poServLog, ("CStaticFileMgr::LoadStaticFileList, LoadStaticFile[%s][%s] failed[%d].", pobjContent->m_strFileName.c_str(), pobjContent->m_strRealName.c_str(), dwRet));
@@ -187,7 +187,7 @@ TINT32 CStaticFileMgr::LoadStaticFileList()
                         }
                         
                         // load json
-                        dwRet = LoadStaticFile(pobjContent);
+                        dwRet = LoadStaticFile(pobjContent, pobjContent->m_strPlatForm, pobjContent->m_strVersion);
                         if(dwRet != 0)
                         {
                             TSE_LOG_ERROR(m_poServLog, ("CStaticFileMgr::LoadStaticFileList, LoadStaticFile[%s][%s] failed[%d].", pobjContent->m_strFileName.c_str(), pobjContent->m_strRealName.c_str(), dwRet));
@@ -231,7 +231,7 @@ TINT32 CStaticFileMgr::LoadNewDataListJson(Json::Value &jNewDataListJson)
     return 0;
 }
 
-TINT32 CStaticFileMgr::LoadStaticFile( CStaticFileContent *pobjStaticFile )
+TINT32 CStaticFileMgr::LoadStaticFile(CStaticFileContent *pobjStaticFile, string strPlatForm, string strVersion)
 {
     pobjStaticFile->m_jsonContent.clear();
 
@@ -272,7 +272,14 @@ TINT32 CStaticFileMgr::LoadStaticFile( CStaticFileContent *pobjStaticFile )
     //更新md5
     if (IsFileTypeNeedMd5(pobjStaticFile->m_strStaticDataType))
     {
-        UpdateMd5Json(m_jsonMd5, pobjStaticFile->m_strStaticDataType, pobjStaticFile->m_strMd5, pobjStaticFile->m_ucReloadFlag);
+        if (strVersion == "")
+        {
+            UpdateMd5Json(m_jsonMd5, pobjStaticFile->m_strStaticDataType, pobjStaticFile->m_strMd5, pobjStaticFile->m_ucReloadFlag);
+        }
+        else
+        {
+            UpdateMd5Json_Version(m_jsonMd5_version, pobjStaticFile->m_strStaticDataType, pobjStaticFile->m_strMd5, pobjStaticFile->m_ucReloadFlag, strPlatForm, strVersion);
+        }
     }    
 
     return 0;
@@ -692,12 +699,44 @@ TINT32 CStaticFileMgr::UpdateMd5Json( Json::Value &jContent, string strKey, stri
     return 0;
 }
 
+TINT32 CStaticFileMgr::UpdateMd5Json_Version(Json::Value &jContent, string strKey, string strMd5, TINT32 dwReload, string strPlatForm, string strVersion)
+{
+    jContent[strVersion][strPlatForm][strKey][0] = strMd5;
+    jContent[strVersion][strPlatForm][strKey][1] = dwReload;
+    return 0;
+}
+
 TINT32 CStaticFileMgr::GetStaticJson_Md5( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     //更新maintain信息
     CStaticFileContent *pobjConent = GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstInfo->m_strPlatform, pstInfo->m_strVs);
     CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, pstInfo->m_strUpdateVs, pstInfo->m_strVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
 
+    Json::Value::Members jMemberVersion = m_jsonMd5_version.getMemberNames();
+    for (TUINT32 udwIdx = 0; udwIdx < jMemberVersion.size(); ++udwIdx)
+    {
+        if(jMemberVersion[udwIdx] == pstInfo->m_strVs)
+        {
+            TSE_LOG_INFO(m_poServLog, ("CStaticFileMgr::GetStaticJson_Md5, kurotest: [version=%s]", jMemberVersion[udwIdx].c_str()));
+            Json::Value::Members jMemberPlatform = m_jsonMd5_version[jMemberVersion[udwIdx]].getMemberNames();
+            for (TUINT32 udwIdy = 0; udwIdy < jMemberPlatform.size(); udwIdy++)
+            {
+                if (jMemberPlatform[udwIdy] == pstInfo->m_strPlatform)
+                {
+		            TSE_LOG_INFO(m_poServLog, ("CStaticFileMgr::GetStaticJson_Md5, kurotest: [platform=%s]", jMemberPlatform[udwIdy].c_str()));
+                    Json::Value::Members jMemberFile = m_jsonMd5_version[jMemberVersion[udwIdx]][jMemberPlatform[udwIdy]].getMemberNames();
+                    for (TUINT32 udwIdz = 0; udwIdz < jMemberFile.size(); udwIdz++)
+                    {
+			            TSE_LOG_INFO(m_poServLog, ("CStaticFileMgr::GetStaticJson_Md5, kurotest: [file=%s]", jMemberFile[udwIdz].c_str()));
+                        m_jsonMd5[jMemberFile[udwIdz]][0] = m_jsonMd5_version[jMemberVersion[udwIdx]][jMemberPlatform[udwIdy]][jMemberFile[udwIdz]][0];
+                        m_jsonMd5[jMemberFile[udwIdz]][1] = m_jsonMd5_version[jMemberVersion[udwIdx]][jMemberPlatform[udwIdy]][jMemberFile[udwIdz]][1];
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+    }
     jContent["op_md5"] = CStaticFileMgr::GetInstance()->m_jsonMd5;
     return 0;
 }

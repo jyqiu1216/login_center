@@ -249,8 +249,8 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
                 {
                     m_jsonWriter.omitEndingLineFeed();
                     string strData = m_jsonWriter.write(jTmpContent[*it]);
-                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [seq=%u]", 
-                        vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), pstSession->m_udwSeqNo));
+                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [version=%s] [seq=%u]", 
+                        vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), stRouteInfo.m_strVs.c_str(), pstSession->m_udwSeqNo));
                 }
 
             }
