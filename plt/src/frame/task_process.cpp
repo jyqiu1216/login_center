@@ -134,14 +134,14 @@ TINT32 CTaskProcess::Init(CConf *poConf, ILongConn *poSearchLongConn, ILongConn 
         m_pPackTool[idx] = new CBaseProtocolPack();
         m_pPackTool[idx]->Init();
     }
-    m_pUnPackTool = new CBaseProtocolUnpack();
-    m_pUnPackTool->Init();
+    //m_pUnPackTool = new CBaseProtocolUnpack();
+    //m_pUnPackTool->Init();
 
     m_stHttpParam.Reset();
-    m_pHttpResBuf = new TCHAR[MAX_NETIO_PACKAGE_BUF_LEN];
+    //m_pHttpResBuf = new TCHAR[MAX_NETIO_PACKAGE_BUF_LEN];
 
 
-    m_pobjEncrypt = new CDes;
+    //m_pobjEncrypt = new CDes;
 
     return 0;
 }

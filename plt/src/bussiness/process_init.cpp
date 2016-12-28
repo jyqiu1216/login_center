@@ -23,6 +23,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
     TINT32 dwSid = pstSession->m_stReqParam.m_dwSvrId;
 
     string strVs = pstSession->m_stReqParam.m_szVs;
+    string strPlatform = pstSession->m_stReqParam.m_szPlatForm;
 
     SUserInfo *pstUserInfo = &pstSession->m_stUserInfo;
     TbProduct *patbDeviceProduct = &pstUserInfo->m_atbDeviceProduct[0];
@@ -37,6 +38,12 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
+        if (strPlatform == "" || strVs == "")
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode == EN_RET_CODE__PARAM_ERROR;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
         // next procedure
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__1;
     }
@@ -46,7 +53,12 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
     {
         TBOOL bHasMaintain = FALSE;
         CStaticFileContent *pobjConent = CStaticFileMgr::GetInstance()->GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szVs);
-        
+        if (pobjConent == NULL)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode == EN_RET_CODE__PARAM_ERROR;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
         // 判断是否有全服Maintain和版本强制更新
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 
@@ -452,7 +464,12 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
 
         TBOOL bHasMaintain = FALSE;
         CStaticFileContent *pobjConent = CStaticFileMgr::GetInstance()->GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szVs);
-
+        if (pobjConent == NULL)
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode == EN_RET_CODE__PARAM_ERROR;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
         // 分服mintain
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 

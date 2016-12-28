@@ -210,7 +210,14 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
                     }
                 }
             }            
-            if (dwRet < 0)
+            if (dwRet == EN_RET_CODE__STATICFILE_ERROR)
+            {
+                TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GetStaticJson: [static_file_type=%s] [platform=%s] [version=%s] [seq=%u]", 
+                    vecResultStaticFileList[udwIdx].c_str(), stRouteInfo.m_strPlatform.c_str(), stRouteInfo.m_strVs.c_str(), pstSession->m_udwSeqNo));
+                pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE__STATICFILE_ERROR;
+                return 0;
+            }
+            else if (dwRet < 0)
             {
                 TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("GetStaticJson: [static_file_type=%s] [ret=%d] do not need to output[seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwRet, pstSession->m_udwSeqNo));
                 continue;

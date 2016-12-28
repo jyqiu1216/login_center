@@ -35,6 +35,8 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
     string strRid = pstSession->m_stReqParam.m_szRid;
     TINT64 ddwUid = pstSession->m_stReqParam.m_ddwUserId;
     TINT32 dwSid = pstSession->m_stReqParam.m_dwSvrId;
+    string strVs = pstSession->m_stReqParam.m_szVs;
+    string strPlatform = pstSession->m_stReqParam.m_szPlatForm;
 
     SUserInfo *pstUserInfo = &pstSession->m_stUserInfo;
     TbProduct *patbDeviceProduct = &pstUserInfo->m_atbDeviceProduct[0];
@@ -51,7 +53,12 @@ TINT32 CProcessGetdata::requestHandler(SSession* pstSession, TBOOL &bNeedRespons
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }
-
+        if (strPlatform == "" || strVs == "")
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode == EN_RET_CODE__PARAM_ERROR;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
         if (EN_STATIC_TYPE_NEW_MAINTAIN != strStaticType)
         {
             // next procedure

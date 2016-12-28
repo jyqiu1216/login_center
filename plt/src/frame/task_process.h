@@ -55,7 +55,7 @@ private:
     *****************************************/
     bool EncryptUrl(char *pszIn, char *pszOut, int &dwOutLen, float fVersion);
     bool DecryptUrl(char *pszIn, char *pszOut, int &dwOutLen, float fVersion);
-    CDes				*m_pobjEncrypt;
+    //CDes				*m_pobjEncrypt;
     TCHAR				m_szEncryptBuf[MAX_HTTP_REQ_LEN];
     TCHAR				m_szEncryptUrl[MAX_HTTP_REQ_LEN];
 
@@ -76,7 +76,7 @@ public:
 
     // 打包/解包器
     CBaseProtocolPack   *m_pPackTool[MAX_AWS_REQ_TASK_NUM];
-    CBaseProtocolUnpack *m_pUnPackTool;
+    //CBaseProtocolUnpack *m_pUnPackTool;
 
     // hs请求包和包长
     TUCHAR m_szReqBuf[MAX_HTTP_REQ_LEN];
@@ -90,7 +90,7 @@ private:
     //中间使用的变量////////////////////////////////////
     // http的k-v对
     RequestParam		m_stHttpParam;
-    TCHAR				*m_pHttpResBuf;
+    //TCHAR				*m_pHttpResBuf;
 
 
 

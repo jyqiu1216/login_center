@@ -17,12 +17,20 @@ TINT32 CProcessUpdate::requestHandler(SSession *pstSession, TBOOL &bNeedResponse
     string strRid = pstSession->m_stReqParam.m_szRid;
     string strDevice = pstSession->m_stReqParam.m_szDevice;
 
+    string strVs = pstSession->m_stReqParam.m_szVs;
+    string strPlatform = pstSession->m_stReqParam.m_szPlatForm;
     if (pstSession->m_udwCommandStep == EN_COMMAND_STEP__INIT)
     {
         if (-1 != pstSession->m_stReqParam.m_dwSvrId
             && pstSession->m_stReqParam.m_dwSvrId > CGameSvrInfo::GetInstance()->m_udwSvrNum - 1)
         {
             pstSession->m_stCommonResInfo.m_dwRetCode = EN_RET_CODE_ERROR_SID;
+            pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
+            return 0;
+        }
+        if (strPlatform == "" || strVs == "")
+        {
+            pstSession->m_stCommonResInfo.m_dwRetCode == EN_RET_CODE__PARAM_ERROR;
             pstSession->m_udwCommandStep = EN_COMMAND_STEP__END;
             return 0;
         }

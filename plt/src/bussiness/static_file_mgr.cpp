@@ -597,7 +597,10 @@ TINT32 CStaticFileMgr::GetStaticJson_Meta( Json::Value &jContent, SRouteInfo *ps
 {
     CStaticFileContent *pobjMeta = GetStaticFile(EN_STATIC_TYPE_META, pstInfo->m_strPlatform, pstInfo->m_strVs);
     CStaticFileContent *pobjMetaRaw = GetStaticFile(EN_STATIC_TYPE_META_RAW, pstInfo->m_strPlatform, pstInfo->m_strVs);
-
+    if (pobjMeta == NULL || pobjMetaRaw == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     TUINT64 uddwRawMd5 = GetJsonMd5(pobjMeta->m_jsonContent);
     TUINT64 uddwNewMd5 = GetJsonMd5(pobjMetaRaw->m_jsonContent);
 
@@ -633,6 +636,10 @@ TINT32 CStaticFileMgr::GetStaticJson_MetaOld( Json::Value &jContent, SRouteInfo 
 TINT32 CStaticFileMgr::GetStaticJson_Guide( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     CStaticFileContent *pobjContent = GetStaticFile(EN_STATIC_TYPE_GUIDE, pstInfo->m_strPlatform, pstInfo->m_strVs);
+    if (pobjContent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     jContent["op_guide"] = pobjContent->m_jsonContent;
     return 0;
 }
@@ -640,6 +647,10 @@ TINT32 CStaticFileMgr::GetStaticJson_Guide( Json::Value &jContent, SRouteInfo *p
 TINT32 CStaticFileMgr::GetStaticJson_Maintain( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     CStaticFileContent *pobjConent = GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstInfo->m_strPlatform, pstInfo->m_strVs);
+    if (pobjConent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     jContent["op_new_maintain"] = pobjConent->m_jsonContent;
 
     UpdtAndGetMaintainStatus(jContent["op_new_maintain"], pstInfo->m_strPlatform, pstInfo->m_strUpdateVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
@@ -656,6 +667,10 @@ TINT32 CStaticFileMgr::GetStaticJson_Notice( Json::Value &jContent, SRouteInfo *
 TINT32 CStaticFileMgr::GetStaticJson_SvrConf( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     CStaticFileContent *pobjContent = GetStaticFile(EN_STATIC_TYPE_SVRCONF, pstInfo->m_strPlatform, pstInfo->m_strVs);
+    if (pobjContent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     jContent["op_svr_conf"][pstInfo->m_strSid] = pobjContent->m_jsonContent["svr_json"][pstInfo->m_strSid];
     return 0;
 }
@@ -675,6 +690,10 @@ TINT32 CStaticFileMgr::GetStaticJson_AlStore( Json::Value &jContent, SRouteInfo 
 TINT32 CStaticFileMgr::GetStaticJson_ClientConf( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     CStaticFileContent *pobjContent = GetStaticFile(EN_STATIC_TYPE_CLIENTCONF, pstInfo->m_strPlatform, pstInfo->m_strVs);
+    if (pobjContent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     jContent["op_client_conf"] = pobjContent->m_jsonContent;
     return 0;
 }
@@ -688,6 +707,10 @@ TINT32 CStaticFileMgr::GetStaticJson_GlobalConf( Json::Value &jContent, SRouteIn
 TINT32 CStaticFileMgr::GetStaticJson_UserLinker( Json::Value &jContent, SRouteInfo *pstInfo )
 {
     CStaticFileContent *pobjContent = GetStaticFile(EN_STATIC_TYPE_USER_LINK, pstInfo->m_strPlatform, pstInfo->m_strVs);
+    if (pobjContent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
     jContent["op_user_link"] = pobjContent->m_jsonContent[pstInfo->m_strSid];
     return 0;
 }
@@ -710,7 +733,11 @@ TINT32 CStaticFileMgr::GetStaticJson_Md5( Json::Value &jContent, SRouteInfo *pst
 {
     //更新maintain信息
     CStaticFileContent *pobjConent = GetStaticFile(EN_STATIC_TYPE_NEW_MAINTAIN, pstInfo->m_strPlatform, pstInfo->m_strVs);
-    CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, pstInfo->m_strUpdateVs, pstInfo->m_strVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
+    if (pobjConent == NULL)
+    {
+        return EN_RET_CODE__STATICFILE_ERROR;
+    }
+    CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, pstInfo->m_strPlatform, pstInfo->m_strUpdateVs, pstInfo->m_strSid, pstInfo->m_udwCurTime, pstInfo->m_strDevice);
 
     Json::Value::Members jMemberVersion = m_jsonMd5_version.getMemberNames();
     for (TUINT32 udwIdx = 0; udwIdx < jMemberVersion.size(); ++udwIdx)

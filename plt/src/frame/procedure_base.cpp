@@ -162,6 +162,7 @@ TINT32 CBaseProcedure::SendLoginGetRequest( SSession *pstSession )
     pPack->SetServiceType(EN_SERVICE_TYPE__CLIENT__COMMAND_REQ);
     pPack->SetSeq(CGlobalServ::GenerateHsReqSeq());
     pPack->SetKey(EN_GLOBAL_KEY__REQ_BUF, (unsigned char*)req_ser.c_str(), req_ser.size());
+    pPack->SetKey(EN_GLOBAL_KEY__CLIENT_IP, (unsigned char*)pstSession->m_stReqParam.m_szIp, MAX_IP_LEN);
     pPack->GetPackage(&pszPack, &udwPackLen);
 
     // 4.
