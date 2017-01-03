@@ -63,7 +63,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 
             pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szUpdateVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime, pstSession->m_stReqParam.m_szDevice);
-        if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus)
+        if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus || dwMaintainStatus == EN_MAINTAIN_TYPE_VERSION_ADVICE_UPDATE)
         {
             bHasMaintain = FALSE;
         }
@@ -456,8 +456,6 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__7;
     }
 
-
-
     if (EN_COMMAND_STEP__7 == pstSession->m_udwCommandStep)
     {
         pstSession->m_udwCommandStep = EN_COMMAND_STEP__8;
@@ -474,7 +472,7 @@ TINT32 CProcessInit::requestHandler(SSession* pstSession, TBOOL &bNeedResponse)
         TINT32 dwMaintainStatus = EN_MAINTAIN_TYPE_NORMAL;
         dwMaintainStatus = CStaticFileMgr::GetInstance()->UpdtAndGetMaintainStatus(pobjConent->m_jsonContent, 
             pstSession->m_stReqParam.m_szPlatForm, pstSession->m_stReqParam.m_szUpdateVs, NumToString(pstSession->m_stReqParam.m_dwSvrId), pstSession->m_udwReqTime, pstSession->m_stReqParam.m_szDevice);
-        if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus)
+        if (EN_MAINTAIN_TYPE_NORMAL == dwMaintainStatus || dwMaintainStatus == EN_MAINTAIN_TYPE_VERSION_ADVICE_UPDATE)
         {
             bHasMaintain = FALSE;
         }

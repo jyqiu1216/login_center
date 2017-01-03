@@ -70,7 +70,6 @@ void * CQueryNetIO::RoutineNetIO( void *pParam )
 void CQueryNetIO::OnUserRequest( LongConnHandle hSession, const TUCHAR *pData, TUINT32 uLen, BOOL &bWillResponse )
 {
     HRESULT hRes = S_OK;
-
     if(m_bHttpOp)
     {
         hRes = OnClientCommandRequest_Http(hSession, pData, uLen);
@@ -87,7 +86,6 @@ void CQueryNetIO::OnUserRequest( LongConnHandle hSession, const TUCHAR *pData, T
     {
         bWillResponse = TRUE;
     }
-
     return;
 }
 
@@ -175,6 +173,7 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Http( LongConnHandle stHandle, const
     // TUINT16 uwServType = 0;
     // TUINT32 udwRegSeq = 0;
     SSession    *pSession = NULL;
+    TINT64 ddwBegTime = CTimeUtils::GetCurTimeUs();
 
     if(m_udwSeqno < 1000)
     {
@@ -223,7 +222,8 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Http( LongConnHandle stHandle, const
     // 4. 插入任务队列
     TSE_LOG_INFO(m_pLog, ("m_poTaskQueue->WaitTillPush: session[%p] [seq=%u]", pSession, m_udwSeqno));
     m_poTaskQueue->WaitTillPush(pSession);
-
+    TINT64 ddwEndTime = CTimeUtils::GetCurTimeUs();
+    TSE_LOG_DEBUG(m_pLog, ("CQueryNetIO::OnUserHttpRequest [time cost=%ld us] [seq=%u]", ddwEndTime - ddwBegTime, m_udwSeqno));
     return S_OK;
 }
 
@@ -237,9 +237,8 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
     TUINT16         uwServType = 0;
     TUINT32         udwLinkerCmdRef = 100;
 
-
     string strIp = "";
-
+    TINT64 ddwBegTime = CTimeUtils::GetCurTimeUs();
 
     // 1. 解包
     m_pUnPackTool->UntachPackage();
@@ -313,6 +312,8 @@ HRESULT CQueryNetIO::OnClientCommandRequest_Binary( LongConnHandle stHandle, con
     // 4. 插入任务队列
     TSE_LOG_INFO(m_pLog, ("m_poTaskQueue->WaitTillPush: session[%p] [seq=%u]", pSession, m_udwSeqno));
     m_poTaskQueue->WaitTillPush(pSession);
+    TINT64 ddwEndTime = CTimeUtils::GetCurTimeUs();
+    TSE_LOG_DEBUG(m_pLog, ("CQueryNetIO::OnUserBinaryRequest [time cost=%ld us] [seq=%u]", ddwEndTime - ddwBegTime, m_udwSeqno));
 
     return S_OK;
 }

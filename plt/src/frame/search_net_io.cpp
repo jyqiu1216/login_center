@@ -70,7 +70,7 @@ void CSearchNetIO::OnUserRequest( LongConnHandle hSession, const TUCHAR *pszData
 void CSearchNetIO::OnTasksFinishedCallBack( LTasksGroup *pstTasksGrp )
 {
 	SSession *poSession = 0;
-
+    TINT64 ddwBegTime = CTimeUtils::GetCurTimeUs();
 	if (0 == pstTasksGrp)
     {
 		TSE_LOG_DEBUG(m_poServLog, ("pstTasksGrp is null"));
@@ -109,6 +109,8 @@ void CSearchNetIO::OnTasksFinishedCallBack( LTasksGroup *pstTasksGrp )
 		break;
 	}
 
+    TINT64 ddwEndTime = CTimeUtils::GetCurTimeUs();
+    TSE_LOG_DEBUG(m_poServLog, ("CSearchNetIO::OnTasksFinishedCallBack [time cost=%ld us] [seq=%u]", ddwEndTime - ddwBegTime, poSession->m_udwSeqNo));
 	// 3> push session wrapper to work queue
 	m_poTaskQueue->WaitTillPush(poSession);
 }

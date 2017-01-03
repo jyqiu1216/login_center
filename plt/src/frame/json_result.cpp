@@ -106,6 +106,8 @@ TINT32 CJsonResult::GenResData(SSession* pstSession, TCHAR* pBeginPos, TCHAR* pE
 
 TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
 {
+    TINT64 ddwBegTime = CTimeUtils::GetCurTimeUs();
+
     m_objPbResponse.Clear();
 
     TINT32 dwRet = 0;
@@ -181,7 +183,7 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
         for (TUINT32 udwIdx = 0; udwIdx < vecResultStaticFileList.size(); ++udwIdx)
         {
             TINT32 dwUpdateType = 0;
-
+            TINT64 ddwBegin = CTimeUtils::GetCurTimeUs();
             pTmpBuf = pPackBufCur;
 
             m_objPbResponse.Clear();
@@ -256,8 +258,8 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
                 {
                     m_jsonWriter.omitEndingLineFeed();
                     string strData = m_jsonWriter.write(jTmpContent[*it]);
-                    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [version=%s] [seq=%u]", 
-                        vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), stRouteInfo.m_strVs.c_str(), pstSession->m_udwSeqNo));
+                    //TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [content=%s] [version=%s] [seq=%u]", 
+                    //    vecResultStaticFileList[udwIdx].c_str(), strData.c_str(), stRouteInfo.m_strVs.c_str(), pstSession->m_udwSeqNo));
                 }
 
             }
@@ -286,7 +288,7 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
             compress((Bytef*)(pTmpBuf + 5), &udwCompressRawDataLen, (Bytef*)m_pSourceBuffer, udwRawDataLen);//zip
             dwTmpPackLen = udwCompressRawDataLen;
 
-            TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [len=%ld] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwTmpPackLen, pstSession->m_udwSeqNo));
+            TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("table_raw_key: [static_file_type=%s] [len=%ld] [time cost=%ld us] [seq=%u]", vecResultStaticFileList[udwIdx].c_str(), dwTmpPackLen, CTimeUtils::GetCurTimeUs() - ddwBegin, pstSession->m_udwSeqNo));
 
             //回填数据长度
             udwNetCompressRawDataLen = htonl(dwTmpPackLen);
@@ -316,6 +318,8 @@ TCHAR* CJsonResult::GenPushData_Pb(SSession *pstSession)
 
     pstSession->m_dwTmpLen = pPackBufCur - pPackBufBeg;
 
+    TINT64 ddwEndTime = CTimeUtils::GetCurTimeUs();
+    TSE_LOG_DEBUG(CGlobalServ::m_poServLog, ("CJsonResult::GenPushData_Pb [time cost=%ld us] [seq=%u]", ddwEndTime - ddwBegTime, pstSession->m_udwSeqNo));
     return pPackBufBeg;
 
 }

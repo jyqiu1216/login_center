@@ -374,6 +374,7 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     TUINT32 udwMaintainBeg = 0;
     TUINT32 udwMaintainEnd = 0;
     TINT32 dwRetStatus = EN_MAINTAIN_TYPE_NORMAL;
+    TINT32 dwGlobalStatus = EN_MAINTAIN_TYPE_NORMAL;
     TINT32 dwIsWhiteUid = 0;
 
     // global——修正url
@@ -448,7 +449,7 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
     {
         jMaintainJson["global"]["status"] = EN_MAINTAIN_TYPE_NORMAL;
     }
-
+    dwGlobalStatus = jMaintainJson["global"]["status"].asInt();
     // svr——修改时间和状态,所有节点都需遍历修改
     if (!jMaintainJson["svrList"].empty())
     {
@@ -498,12 +499,14 @@ TINT32 CStaticFileMgr::UpdtAndGetMaintainStatus( Json::Value &jMaintainJson, str
            //do nothing
         }
     }
+    TSE_LOG_DEBUG(m_poServLog, ("CStaticFileMgr::UpdtAndGetMaintainStatus, kurotest: [global status=%d] [svr status=%d]", 
+        dwGlobalStatus, dwRetStatus));
 
     string md5str = NumToString(GetJsonMd5(jMaintainJson));
     UpdateMd5Json(m_jsonMd5, "new_maintain", md5str, 0);
 
     m_Mutex.release();
-    return dwRetStatus;
+    return dwGlobalStatus > dwRetStatus ? dwGlobalStatus : dwRetStatus;
 }
 
 TINT32 CStaticFileMgr::IsWhiteAccount(string strDevice)
